@@ -2,3 +2,5 @@ node_modules
 dist
 .env
 .idea
+
+/src/generated/prisma

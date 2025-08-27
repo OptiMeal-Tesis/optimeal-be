@@ -1,0 +1,12 @@
+{
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node --enable-source-maps dist/index.js",
+    "build": "rimraf dist && tsc --project tsconfig.build.json",
+    "check": "tsc -p tsconfig.json --noEmit"
+  }
+}

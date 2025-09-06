@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { UserTypeEnum } from '@prisma/client';
 
 // Signup DTO validation schema
 export const SignupInputDTO = z.object({
@@ -6,6 +7,7 @@ export const SignupInputDTO = z.object({
     password: z.string().min(8, 'Password must be at least 8 characters'),
     name: z.string().min(2, 'Name must be at least 2 characters').optional(),
     national_id: z.string().regex(/^\d{7,10}$/, 'National ID must be 7-10 digits'),
+    role: z.nativeEnum(UserTypeEnum).optional().default(UserTypeEnum.USER),
 });
 
 // Login DTO validation schema

@@ -1,9 +1,12 @@
+import { UserTypeEnum } from '@prisma/client';
+
 export interface User {
     id?: number;
     email: string;
     name?: string;
     national_id: string;
     password: string;
+    role: UserTypeEnum;
     isConfirmed?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
@@ -14,6 +17,7 @@ export interface SignUpRequest {
     password: string;
     name?: string;
     national_id: string;
+    role?: UserTypeEnum;
 }
 
 export interface LoginRequest {

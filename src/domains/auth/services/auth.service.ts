@@ -6,7 +6,7 @@ import {
     AuthResponse,
     LoginResponse
 } from '../models/User.js';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, UserTypeEnum } from '@prisma/client';
 
 export class AuthService {
     private authRepository: AuthRepository;
@@ -57,6 +57,8 @@ export class AuthService {
                         name: signUpRequest.name,
                         national_id: signUpRequest.national_id,
                         password: signUpRequest.password, // Encrypt in production
+                        role: signUpRequest.role || UserTypeEnum.USER, // Use provided role or default to USER
+                        cognito_sub: result.UserSub, // Store Cognito user ID
                     },
                 });
 
@@ -75,7 +77,6 @@ export class AuthService {
                 };
             }
         } catch (error: any) {
-            console.error('Error in AuthService.signUp:', error);
             return {
                 success: false,
                 message: this.getErrorMessage(error),
@@ -97,7 +98,6 @@ export class AuthService {
                 },
             };
         } catch (error: any) {
-            console.error('Error in AuthService.confirmSignUp:', error);
             return {
                 success: false,
                 message: this.getErrorMessage(error),
@@ -130,7 +130,6 @@ export class AuthService {
                 };
             }
         } catch (error: any) {
-            console.error('Error in AuthService.login:', error);
             return {
                 success: false,
                 message: this.getErrorMessage(error),

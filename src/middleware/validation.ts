@@ -24,3 +24,27 @@ export const BodyValidation = (schema: z.ZodSchema) => {
         }
     };
 };
+
+/**
+ * Middleware for request params validation using Zod schemas
+ */
+export const ParamsValidation = (schema: z.ZodSchema) => {
+    return (req: Request, res: Response, next: NextFunction) => {
+        try {
+            req.params = schema.parse(req.params) as any;
+            next();
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Validation error',
+                    errors: error.issues.map((err: any) => ({
+                        field: err.path.join('.'),
+                        message: err.message,
+                    })),
+                });
+            }
+            next(error);
+        }
+    };
+};

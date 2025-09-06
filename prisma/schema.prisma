@@ -7,10 +7,43 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ProductTypeEnum {
+  FOOD
+  BEVERAGE
+}
+
+enum RestrictionEnum {
+  GLUTEN_FREE
+  LACTOSE_FREE
+  SUGAR_FREE
+  VEGAN
+}
+
+enum UserTypeEnum {
+  ADMIN
+  USER
+}
+
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+  id          Int     @id @default(autoincrement())
+  email       String  @unique
+  name        String?
   national_id String @unique
-  password String
+  password    String
+  role        UserTypeEnum @default(USER)
+}
+
+model Product {
+  id                   Int               @id @default(autoincrement())
+  name                 String
+  description          String
+  price                Int
+  photo                String?
+  restrictions         RestrictionEnum[] @default([])
+  sides                String[]          @default([])
+  admitsClarifications Boolean           @default(false)
+  type                 ProductTypeEnum
+  stock                Int               @default(0)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
 }

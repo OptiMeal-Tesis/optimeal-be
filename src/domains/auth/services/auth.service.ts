@@ -49,24 +49,31 @@ export class AuthService {
 
             const result = await this.authRepository.signUp(signUpRequest);
 
-            // Save user to our local database
-            await this.prisma.user.create({
-                data: {
-                    email: signUpRequest.email,
-                    name: signUpRequest.name,
-                    national_id: signUpRequest.national_id,
-                    password: signUpRequest.password, // Encrypt in production
-                },
-            });
+            // Only save user to our local database if Cognito signup was successful
+            if (result.UserSub) {
+                await this.prisma.user.create({
+                    data: {
+                        email: signUpRequest.email,
+                        name: signUpRequest.name,
+                        national_id: signUpRequest.national_id,
+                        password: signUpRequest.password, // Encrypt in production
+                    },
+                });
 
-            return {
-                success: true,
-                message: 'User registered successfully. Please confirm your email.',
-                data: {
-                    userId: result.UserSub,
-                    email: signUpRequest.email,
-                },
-            };
+                return {
+                    success: true,
+                    message: 'User registered successfully. Please confirm your email.',
+                    data: {
+                        userId: result.UserSub,
+                        email: signUpRequest.email,
+                    },
+                };
+            } else {
+                return {
+                    success: false,
+                    message: 'Failed to register user with Cognito',
+                };
+            }
         } catch (error: any) {
             console.error('Error in AuthService.signUp:', error);
             return {

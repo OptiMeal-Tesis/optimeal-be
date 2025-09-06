@@ -31,6 +31,7 @@ model User {
   national_id String @unique
   password    String
   role        UserTypeEnum @default(USER)
+  cognito_sub String? @unique
 }
 
 model Product {

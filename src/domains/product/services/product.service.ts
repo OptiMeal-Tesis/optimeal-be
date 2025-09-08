@@ -1,5 +1,6 @@
 import { ProductRepository } from '../repositories/product.repository.js';
 import { Prisma } from '@prisma/client';
+import { S3Service } from '../../../lib/s3.js';
 
 type Product = Prisma.ProductGetPayload<{}>;
 import {
@@ -20,11 +21,27 @@ export class ProductService {
         this.productRepository = new ProductRepository();
     }
 
-    async createProduct(productData: CreateProductRequest): Promise<ProductCreateResponse> {
+    async createProduct(
+        productData: CreateProductRequest,
+        file?: Express.Multer.File
+    ): Promise<ProductCreateResponse> {
         try {
             this.validateCreateProductRequest(productData);
 
-            const product = await this.productRepository.create(productData);
+            let photoUrl: string | undefined = productData.photo;
+
+            // Upload file to S3 if provided
+            if (file) {
+                const uploadResult = await S3Service.uploadFile(file, 'products');
+                photoUrl = uploadResult.url;
+            }
+
+            const productWithPhoto = {
+                ...productData,
+                photo: photoUrl,
+            };
+
+            const product = await this.productRepository.create(productWithPhoto);
 
             return {
                 success: true,
@@ -86,7 +103,11 @@ export class ProductService {
         }
     }
 
-    async updateProduct(id: number, productData: UpdateProductRequest): Promise<ProductUpdateResponse> {
+    async updateProduct(
+        id: number,
+        productData: UpdateProductRequest,
+        file?: Express.Multer.File
+    ): Promise<ProductUpdateResponse> {
         try {
             // Check if product exists
             const existingProduct = await this.productRepository.findById(id);
@@ -99,7 +120,32 @@ export class ProductService {
 
             this.validateUpdateProductRequest(productData);
 
-            const updatedProduct = await this.productRepository.update(id, productData);
+            let photoUrl: string | undefined = productData.photo || existingProduct.photo || undefined;
+
+            // Upload new file to S3 if provided
+            if (file) {
+                // Delete old photo from S3 if it exists
+                if (existingProduct.photo && S3Service.isValidS3Url(existingProduct.photo)) {
+                    const oldKey = S3Service.extractKeyFromUrl(existingProduct.photo);
+                    if (oldKey) {
+                        try {
+                            await S3Service.deleteFile(oldKey);
+                        } catch (error) {
+                            console.warn('Failed to delete old photo from S3:', error);
+                        }
+                    }
+                }
+
+                const uploadResult = await S3Service.uploadFile(file, 'products');
+                photoUrl = uploadResult.url;
+            }
+
+            const productWithPhoto = {
+                ...productData,
+                photo: photoUrl,
+            };
+
+            const updatedProduct = await this.productRepository.update(id, productWithPhoto);
 
             return {
                 success: true,
@@ -123,6 +169,18 @@ export class ProductService {
                     success: false,
                     message: 'Product not found',
                 };
+            }
+
+            // Delete photo from S3 if it exists
+            if (existingProduct.photo && S3Service.isValidS3Url(existingProduct.photo)) {
+                const key = S3Service.extractKeyFromUrl(existingProduct.photo);
+                if (key) {
+                    try {
+                        await S3Service.deleteFile(key);
+                    } catch (error) {
+                        console.warn('Failed to delete photo from S3:', error);
+                    }
+                }
             }
 
             await this.productRepository.delete(id);

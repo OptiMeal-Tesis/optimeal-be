@@ -247,25 +247,70 @@ export const swaggerPaths = {
         post: {
             tags: ['Products'],
             summary: 'Crear un nuevo producto',
-            description: 'Crea un nuevo producto en el sistema (solo administradores)',
+            description: 'Crea un nuevo producto en el sistema (solo administradores). Usa FormData para permitir subida de archivos.',
             security: [{ bearerAuth: [] }],
             requestBody: {
                 required: true,
                 content: {
-                    'application/json': {
+                    'multipart/form-data': {
                         schema: {
-                            $ref: '#/components/schemas/CreateProductRequest'
-                        },
-                        example: {
-                            name: 'Hamburguesa Clásica',
-                            description: 'Deliciosa hamburguesa con carne, lechuga, tomate y queso',
-                            price: 15000,
-                            photo: 'https://example.com/photo.jpg',
-                            restrictions: ['VEGETARIAN'],
-                            sides: ['Papas fritas', 'Ensalada'],
-                            admitsClarifications: true,
-                            type: 'FOOD',
-                            stock: 50
+                            type: 'object',
+                            properties: {
+                                name: {
+                                    type: 'string',
+                                    description: 'Nombre del producto',
+                                    example: 'Hamburguesa Clásica'
+                                },
+                                description: {
+                                    type: 'string',
+                                    description: 'Descripción del producto',
+                                    example: 'Deliciosa hamburguesa con carne, lechuga, tomate y queso'
+                                },
+                                price: {
+                                    type: 'number',
+                                    description: 'Precio del producto',
+                                    example: 15000
+                                },
+                                photo: {
+                                    type: 'string',
+                                    format: 'binary',
+                                    description: 'Imagen del producto (opcional)'
+                                },
+                                restrictions: {
+                                    type: 'array',
+                                    items: {
+                                        type: 'string',
+                                        enum: ['VEGETARIAN', 'VEGAN', 'GLUTEN_FREE', 'DAIRY_FREE']
+                                    },
+                                    description: 'Restricciones alimentarias',
+                                    example: ['VEGETARIAN']
+                                },
+                                sides: {
+                                    type: 'array',
+                                    items: {
+                                        type: 'string'
+                                    },
+                                    description: 'Acompañamientos disponibles',
+                                    example: ['Papas fritas', 'Ensalada']
+                                },
+                                admitsClarifications: {
+                                    type: 'boolean',
+                                    description: 'Si el producto admite aclaraciones',
+                                    example: true
+                                },
+                                type: {
+                                    type: 'string',
+                                    enum: ['FOOD', 'DRINK', 'DESSERT'],
+                                    description: 'Tipo de producto',
+                                    example: 'FOOD'
+                                },
+                                stock: {
+                                    type: 'integer',
+                                    description: 'Cantidad en stock',
+                                    example: 50
+                                }
+                            },
+                            required: ['name', 'description', 'price', 'type', 'stock']
                         }
                     }
                 }
@@ -368,7 +413,7 @@ export const swaggerPaths = {
         put: {
             tags: ['Products'],
             summary: 'Actualizar un producto',
-            description: 'Actualiza la información de un producto existente (solo administradores)',
+            description: 'Actualiza la información de un producto existente (solo administradores). Usa FormData para permitir subida de archivos.',
             security: [{ bearerAuth: [] }],
             parameters: [
                 {
@@ -385,15 +430,64 @@ export const swaggerPaths = {
             requestBody: {
                 required: true,
                 content: {
-                    'application/json': {
+                    'multipart/form-data': {
                         schema: {
-                            $ref: '#/components/schemas/UpdateProductRequest'
-                        },
-                        example: {
-                            name: 'Hamburguesa Clásica Premium',
-                            description: 'Hamburguesa premium con ingredientes de primera calidad',
-                            price: 18000,
-                            stock: 75
+                            type: 'object',
+                            properties: {
+                                name: {
+                                    type: 'string',
+                                    description: 'Nombre del producto',
+                                    example: 'Hamburguesa Clásica Premium'
+                                },
+                                description: {
+                                    type: 'string',
+                                    description: 'Descripción del producto',
+                                    example: 'Hamburguesa premium con ingredientes de primera calidad'
+                                },
+                                price: {
+                                    type: 'number',
+                                    description: 'Precio del producto',
+                                    example: 18000
+                                },
+                                photo: {
+                                    type: 'string',
+                                    format: 'binary',
+                                    description: 'Imagen del producto (opcional)'
+                                },
+                                restrictions: {
+                                    type: 'array',
+                                    items: {
+                                        type: 'string',
+                                        enum: ['VEGETARIAN', 'VEGAN', 'GLUTEN_FREE', 'DAIRY_FREE']
+                                    },
+                                    description: 'Restricciones alimentarias',
+                                    example: ['VEGETARIAN']
+                                },
+                                sides: {
+                                    type: 'array',
+                                    items: {
+                                        type: 'string'
+                                    },
+                                    description: 'Acompañamientos disponibles',
+                                    example: ['Papas fritas', 'Ensalada']
+                                },
+                                admitsClarifications: {
+                                    type: 'boolean',
+                                    description: 'Si el producto admite aclaraciones',
+                                    example: true
+                                },
+                                type: {
+                                    type: 'string',
+                                    enum: ['FOOD', 'DRINK', 'DESSERT'],
+                                    description: 'Tipo de producto',
+                                    example: 'FOOD'
+                                },
+                                stock: {
+                                    type: 'integer',
+                                    description: 'Cantidad en stock',
+                                    example: 75
+                                }
+                            }
                         }
                     }
                 }

@@ -17,6 +17,7 @@ services:
     depends_on:
       optimeal-db:
         condition: service_healthy
+    command: sh -c "echo 'Waiting for database to be ready...' && sleep 5 && echo 'Generating Prisma client...' && npx prisma generate && echo 'Pushing database schema...' && npx prisma db push && echo 'Starting application...' && npm run dev"
     volumes:
       # Mount source code for development (hot reloading)
       - .:/app
@@ -45,27 +46,6 @@ services:
     networks:
       - optimeal-network
 
-  # Database initialization service
-  db-init:
-    container_name: optimeal-db-init
-    build:
-      context: .
-      dockerfile: Dockerfile
-    environment:
-      - DATABASE_URL=postgresql://postgres:password@optimeal-db:5432/optimeal?schema=public
-      - COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID}
-      - COGNITO_CLIENT_ID=${COGNITO_CLIENT_ID}
-      - AWS_REGION=${AWS_REGION:-us-east-1}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-    depends_on:
-      optimeal-db:
-        condition: service_healthy
-    command: sh -c "npx prisma generate && npx prisma db push"
-    profiles:
-      - init
-    networks:
-      - optimeal-network
 
   # Optional: Prisma Studio for database management
   studio:

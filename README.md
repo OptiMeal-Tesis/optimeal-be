@@ -29,17 +29,12 @@ Backend API for Optimeal application built with Node.js, Express, TypeScript, Pr
 
 ### 🐳 Run with Docker
 
-1. **Start all services:**
+1. **Start all services (including automatic database initialization):**
    ```bash
    docker compose up --build -d
    ```
 
-2. **Initialize database:**
-   ```bash
-   docker compose --profile init up db-init
-   ```
-
-3. **Check services status:**
+2. **Check services status:**
    ```bash
    docker compose ps
    ```

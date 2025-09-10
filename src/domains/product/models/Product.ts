@@ -9,6 +9,7 @@ export interface CreateProductRequest {
     sides: string[];
     admitsClarifications: boolean;
     type: ProductTypeEnum;
+    stock: number;
 }
 
 export interface UpdateProductRequest {
@@ -20,6 +21,7 @@ export interface UpdateProductRequest {
     sides?: string[];
     admitsClarifications?: boolean;
     type?: ProductTypeEnum;
+    stock?: number;
 }
 
 export interface ProductResponse {
@@ -32,6 +34,7 @@ export interface ProductResponse {
     sides: string[];
     admitsClarifications: boolean;
     type: ProductTypeEnum;
+    stock: number;
     createdAt: Date;
     updatedAt: Date;
 }

@@ -257,6 +257,7 @@ export class ProductService {
             sides: product.sides,
             admitsClarifications: product.admitsClarifications,
             type: product.type,
+            stock: product.stock,
             createdAt: product.createdAt,
             updatedAt: product.updatedAt,
         };

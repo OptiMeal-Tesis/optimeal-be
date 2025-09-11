@@ -24,6 +24,203 @@ export const swaggerPaths = {
         }
     },
 
+    // Side endpoints
+    '/sides': {
+        get: {
+            tags: ['Sides'],
+            summary: 'Obtener todos los acompañamientos',
+            description: 'Retorna todos los sides. Requiere rol ADMIN.',
+            security: [{ bearerAuth: [] }],
+            responses: {
+                '200': {
+                    description: 'Lista de sides obtenida exitosamente',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/SidesResponse' }
+                        }
+                    }
+                },
+                '401': {
+                    description: 'No autorizado',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+                },
+                '403': {
+                    description: 'Acceso denegado (solo administradores)',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+                },
+                '500': {
+                    description: 'Error interno del servidor',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+                }
+            }
+        },
+        post: {
+            tags: ['Sides'],
+            summary: 'Crear un side',
+            description: 'Crea un nuevo acompañamiento. Requiere rol ADMIN.',
+            security: [{ bearerAuth: [] }],
+            requestBody: {
+                required: true,
+                content: {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                name: { type: 'string', example: 'Papas fritas' },
+                                isActive: { type: 'boolean', example: true }
+                            },
+                            required: ['name']
+                        }
+                    }
+                }
+            },
+            responses: {
+                '201': {
+                    description: 'Side creado exitosamente',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/Side' }
+                        }
+                    }
+                },
+                '400': {
+                    description: 'Error en la validación',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+                },
+                '401': {
+                    description: 'No autorizado',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+                },
+                '403': {
+                    description: 'Acceso denegado (solo administradores)',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+                }
+            }
+        }
+    },
+
+    '/sides/active': {
+        get: {
+            tags: ['Sides'],
+            summary: 'Obtener sides activos (público)',
+            description: 'Retorna la lista de acompañamientos activos. No requiere autenticación.',
+            responses: {
+                '200': {
+                    description: 'Lista de sides activos obtenida exitosamente',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/SidesResponse' }
+                        }
+                    }
+                },
+                '500': {
+                    description: 'Error interno del servidor',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+                }
+            }
+        }
+    },
+
+    '/sides/{id}': {
+        delete: {
+            tags: ['Sides'],
+            summary: 'Eliminar un side por ID',
+            description: 'Elimina un acompañamiento por ID. Requiere rol ADMIN.',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+                {
+                    in: 'path',
+                    name: 'id',
+                    required: true,
+                    schema: { type: 'integer' },
+                    description: 'ID del side',
+                    example: 1
+                }
+            ],
+            responses: {
+                '200': {
+                    description: 'Side eliminado exitosamente',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/Success' },
+                            example: { success: true, message: 'Side deleted successfully', data: {} }
+                        }
+                    }
+                },
+                '401': {
+                    description: 'No autorizado',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+                },
+                '403': {
+                    description: 'Acceso denegado (solo administradores)',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+                },
+                '404': {
+                    description: 'Side no encontrado',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+                }
+            }
+        }
+    },
+
+    '/sides/{id}/active': {
+        patch: {
+            tags: ['Sides'],
+            summary: 'Actualizar isActive de un side',
+            description: 'Actualiza el estado activo/inactivo de un side. Requiere rol ADMIN.',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+                {
+                    in: 'path',
+                    name: 'id',
+                    required: true,
+                    schema: { type: 'integer' },
+                    description: 'ID del side',
+                    example: 1
+                }
+            ],
+            requestBody: {
+                required: true,
+                content: {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                isActive: { type: 'boolean', example: true }
+                            },
+                            required: ['isActive']
+                        }
+                    }
+                }
+            },
+            responses: {
+                '200': {
+                    description: 'Side actualizado exitosamente',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/Side' }
+                        }
+                    }
+                },
+                '400': {
+                    description: 'Error en la validación',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+                },
+                '401': {
+                    description: 'No autorizado',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+                },
+                '403': {
+                    description: 'Acceso denegado (solo administradores)',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+                },
+                '404': {
+                    description: 'Side no encontrado',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+                }
+            }
+        }
+    },
     // Auth endpoints
     '/auth/signup': {
         post: {

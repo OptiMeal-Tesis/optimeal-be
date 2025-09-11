@@ -377,6 +377,27 @@ export const swaggerSchemas = {
         }
     },
 
+    // Side Schemas
+    Side: {
+        type: 'object',
+        properties: {
+            id: { type: 'integer', example: 1 },
+            name: { type: 'string', example: 'Papas fritas' },
+            isActive: { type: 'boolean', example: true }
+        }
+    },
+    SidesResponse: {
+        type: 'object',
+        properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: 'Sides retrieved successfully' },
+            data: {
+                type: 'array',
+                items: { $ref: '#/components/schemas/Side' }
+            }
+        }
+    },
+
     // Health Schema
     HealthResponse: {
         type: 'object',

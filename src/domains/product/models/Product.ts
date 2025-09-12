@@ -6,7 +6,7 @@ export interface CreateProductRequest {
     price: number;
     photo?: string;
     restrictions: RestrictionEnum[];
-    sides: string[];
+    sides: number[]; // Array of side IDs
     admitsClarifications: boolean;
     type: ProductTypeEnum;
     stock: number;
@@ -18,7 +18,7 @@ export interface UpdateProductRequest {
     price?: number;
     photo?: string;
     restrictions?: RestrictionEnum[];
-    sides?: string[];
+    sides?: number[]; // Array of side IDs
     admitsClarifications?: boolean;
     type?: ProductTypeEnum;
     stock?: number;
@@ -31,7 +31,7 @@ export interface ProductResponse {
     price: number;
     photo?: string;
     restrictions: RestrictionEnum[];
-    sides: string[];
+    sides: { id: number; name: string; isActive: boolean }[];
     admitsClarifications: boolean;
     type: ProductTypeEnum;
     stock: number;

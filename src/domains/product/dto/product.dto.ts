@@ -27,15 +27,16 @@ export const CreateProductInputDTO = z.object({
         }).default('[]')
     ]),
     sides: z.union([
-        z.array(z.string()).default([]),
+        z.array(z.number().int().positive('Side ID must be a positive integer')).default([]),
         z.string().transform((val) => {
             if (!val) return [];
             try {
-                return JSON.parse(val);
+                const parsed = JSON.parse(val);
+                return Array.isArray(parsed) ? parsed.map(id => Number(id)) : [];
             } catch {
-                return val.split(',').map(s => s.trim());
+                return val.split(',').map(s => Number(s.trim())).filter(id => !isNaN(id));
             }
-        }).default('[]')
+        }).default(() => [])
     ]),
     admitsClarifications: z.union([
         z.boolean().default(false),
@@ -82,13 +83,14 @@ export const UpdateProductInputDTO = z.object({
         })
     ]).optional(),
     sides: z.union([
-        z.array(z.string()),
+        z.array(z.number().int().positive('Side ID must be a positive integer')),
         z.string().transform((val) => {
-            if (!val) return [] as string[];
+            if (!val) return [] as number[];
             try {
-                return JSON.parse(val);
+                const parsed = JSON.parse(val);
+                return Array.isArray(parsed) ? parsed.map(id => Number(id)) : [];
             } catch {
-                return val.split(',').map(s => s.trim());
+                return val.split(',').map(s => Number(s.trim())).filter(id => !isNaN(id));
             }
         })
     ]).optional(),

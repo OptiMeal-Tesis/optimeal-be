@@ -24,6 +24,15 @@ enum UserTypeEnum {
   USER
 }
 
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
 model User {
   id          Int     @id @default(autoincrement())
   email       String  @unique
@@ -32,6 +41,8 @@ model User {
   password    String
   role        UserTypeEnum @default(USER)
   cognito_sub String? @unique
+  
+  orders      Order[]
 }
 
 model Product {
@@ -41,16 +52,55 @@ model Product {
   price                Int
   photo                String?
   restrictions         RestrictionEnum[] @default([])
-  sides                String[]          @default([])
+  sides                Side[]
   admitsClarifications Boolean           @default(false)
   type                 ProductTypeEnum
   stock                Int               @default(0)
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
+  
+  orderItems           OrderItem[]
 }
 
 model Side {
   id       Int     @id @default(autoincrement())
   name     String
   isActive Boolean @default(true)
+  
+  products       Product[]
+  orderItemSides OrderItemSide[]
+}
+
+model Order {
+  id          Int         @id @default(autoincrement())
+  userId      Int
+  user        User        @relation(fields: [userId], references: [id])
+  status      OrderStatus @default(PENDING)
+  totalPrice  Int
+  pickUpTime  DateTime
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  orderItems  OrderItem[]
+}
+
+model OrderItem {
+  id          Int     @id @default(autoincrement())
+  orderId     Int
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   Int
+  product     Product @relation(fields: [productId], references: [id])
+  quantity    Int     @default(1)
+  unitPrice   Int
+  notes       String?
+  
+  orderItemSide OrderItemSide?
+}
+
+model OrderItemSide {
+  id          Int       @id @default(autoincrement())
+  orderItemId Int       @unique
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  sideId      Int
+  side        Side      @relation(fields: [sideId], references: [id])
 }

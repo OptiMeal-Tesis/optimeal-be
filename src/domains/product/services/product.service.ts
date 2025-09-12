@@ -254,7 +254,11 @@ export class ProductService {
             price: product.price,
             photo: product.photo,
             restrictions: product.restrictions,
-            sides: product.sides,
+            sides: product.sides?.map((side: any) => ({
+                id: side.id,
+                name: side.name,
+                isActive: side.isActive
+            })) || [],
             admitsClarifications: product.admitsClarifications,
             type: product.type,
             stock: product.stock,

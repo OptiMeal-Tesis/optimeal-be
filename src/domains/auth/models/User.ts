@@ -1,17 +1,5 @@
 import { UserTypeEnum } from '@prisma/client';
 
-export interface User {
-    id?: number;
-    email: string;
-    name?: string;
-    national_id: string;
-    password: string;
-    role: UserTypeEnum;
-    isConfirmed?: boolean;
-    createdAt?: Date;
-    updatedAt?: Date;
-}
-
 export interface SignUpRequest {
     email: string;
     password: string;

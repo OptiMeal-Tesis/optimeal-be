@@ -6,58 +6,62 @@ import {
     AuthResponse,
     LoginResponse
 } from '../models/User.js';
-import { PrismaClient, UserTypeEnum } from '@prisma/client';
+import { UserService } from '../../user/services/user.service.js';
+import { CreateUserRequest } from '../../user/models/User.js';
+import { UserTypeEnum } from '@prisma/client';
 
 export class AuthService {
     private authRepository: AuthRepository;
-    private prisma: PrismaClient;
+    private userService: UserService;
 
     constructor() {
         this.authRepository = new AuthRepository();
-        this.prisma = new PrismaClient();
+        this.userService = new UserService();
     }
 
     async signUp(signUpRequest: SignUpRequest): Promise<AuthResponse> {
         try {
             this.validateSignUpRequest(signUpRequest);
 
-            const existingUser = await this.prisma.user.findFirst({
-                where: {
-                    OR: [
-                        { email: signUpRequest.email },
-                        { national_id: signUpRequest.national_id }
-                    ]
-                }
-            });
-
-            if (existingUser) {
-                if (existingUser.email === signUpRequest.email) {
-                    return {
-                        success: false,
-                        message: 'El email ya está registrado',
-                    };
-                }
-                if (existingUser.national_id === signUpRequest.national_id) {
-                    return {
-                        success: false,
-                        message: 'El DNI ya está registrado',
-                    };
-                }
+            // Check if user already exists using the user service
+            const existingUserByEmail = await this.userService.getUserByEmail(signUpRequest.email);
+            if (existingUserByEmail.success) {
+                return {
+                    success: false,
+                    message: 'El email ya está registrado',
+                };
             }
 
+            const existingUserByNationalId = await this.userService.getUserByNationalId(signUpRequest.national_id);
+            if (existingUserByNationalId.success) {
+                return {
+                    success: false,
+                    message: 'El DNI ya está registrado',
+                };
+            }
+
+            // Register user in Cognito
             const result = await this.authRepository.signUp(signUpRequest);
 
             if (result.UserSub) {
-                await this.prisma.user.create({
-                    data: {
-                        email: signUpRequest.email,
-                        name: signUpRequest.name,
-                        national_id: signUpRequest.national_id,
-                        password: signUpRequest.password, // Encrypt in production
-                        role: signUpRequest.role || UserTypeEnum.USER, // Use provided role or default to USER
-                        cognito_sub: result.UserSub, // Store Cognito user ID
-                    },
-                });
+                // Create user in database using the user service
+                const createUserRequest: CreateUserRequest = {
+                    email: signUpRequest.email,
+                    name: signUpRequest.name,
+                    national_id: signUpRequest.national_id,
+                    password: signUpRequest.password, // Encrypt in production
+                    role: signUpRequest.role || UserTypeEnum.USER,
+                    cognito_sub: result.UserSub,
+                };
+
+                const userResult = await this.userService.createUser(createUserRequest);
+                
+                if (!userResult.success) {
+                    return {
+                        success: false,
+                        message: 'Error al crear el usuario en la base de datos',
+                    };
+                }
 
                 return {
                     success: true,
@@ -106,6 +110,16 @@ export class AuthService {
         try {
             this.validateLoginRequest(loginRequest);
 
+            // First, check if user exists in database
+            const userResult = await this.userService.getUserByEmail(loginRequest.email);
+            if (!userResult.success || !userResult.data || Array.isArray(userResult.data)) {
+                return {
+                    success: false,
+                    message: 'Usuario no encontrado en la base de datos',
+                };
+            }
+
+            // Then authenticate with Cognito
             const result = await this.authRepository.login(loginRequest);
 
             if (result.AuthenticationResult) {
@@ -117,6 +131,8 @@ export class AuthService {
                     idToken: result.AuthenticationResult.IdToken,
                     data: {
                         email: loginRequest.email,
+                        userId: userResult.data.id,
+                        role: userResult.data.role,
                         expiresIn: result.AuthenticationResult.ExpiresIn,
                     },
                 };

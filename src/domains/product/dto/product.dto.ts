@@ -59,15 +59,56 @@ export const CreateProductInputDTO = z.object({
 export const UpdateProductInputDTO = z.object({
     name: z.string().min(1, 'Name is required').max(100, 'Name must be less than 100 characters').optional(),
     description: z.string().min(1, 'Description is required').max(500, 'Description must be less than 500 characters').optional(),
-    price: z.number().int().positive('Price must be a positive integer').optional(),
+    price: z.union([
+        z.number().int().positive('Price must be a positive integer'),
+        z.string().transform((val) => {
+            const num = parseInt(val);
+            if (isNaN(num) || num <= 0) {
+                throw new Error('Price must be a positive integer');
+            }
+            return num;
+        })
+    ]).optional(),
     photo: z.string().url('Photo must be a valid URL').or(z.literal('')).optional(),
-    restrictions: z.array(z.nativeEnum(RestrictionEnum)).optional(),
-    sides: z.array(z.string()).optional(),
-    admitsClarifications: z.boolean().optional(),
+    restrictions: z.union([
+        z.array(z.nativeEnum(RestrictionEnum)),
+        z.string().transform((val) => {
+            if (!val) return [] as RestrictionEnum[];
+            try {
+                return JSON.parse(val);
+            } catch {
+                return val.split(',').map(r => r.trim()) as unknown as RestrictionEnum[];
+            }
+        })
+    ]).optional(),
+    sides: z.union([
+        z.array(z.string()),
+        z.string().transform((val) => {
+            if (!val) return [] as string[];
+            try {
+                return JSON.parse(val);
+            } catch {
+                return val.split(',').map(s => s.trim());
+            }
+        })
+    ]).optional(),
+    admitsClarifications: z.union([
+        z.boolean(),
+        z.string().transform((val) => val === 'true')
+    ]).optional(),
     type: z.nativeEnum(ProductTypeEnum, {
         message: 'Type must be FOOD or BEVERAGE'
     }).optional(),
-    stock: z.number().int().min(0, 'Stock must be a non-negative integer').optional()
+    stock: z.union([
+        z.number().int().min(0, 'Stock must be a non-negative integer'),
+        z.string().transform((val) => {
+            const num = parseInt(val);
+            if (isNaN(num) || num < 0) {
+                throw new Error('Stock must be a non-negative integer');
+            }
+            return num;
+        })
+    ]).optional()
 });
 
 export const ProductIdParamDTO = z.object({

@@ -1,7 +1,7 @@
 import { Request, Response, Router } from 'express';
 import HttpStatus from 'http-status';
 import { OrderService } from '../services/order.service.js';
-import { CreateOrderDTO, UpdateOrderStatusDTO, OrderIdParamDTO } from '../dto/order.dto.js';
+import { CreateOrderDTO, UpdateOrderStatusDTO, OrderIdParamDTO, OrderQueryParamsDTO } from '../dto/order.dto.js';
 import { BodyValidation, ParamsValidation } from '../../../middleware/validation.js';
 import { requireAdmin, requireAuth } from '../../../middleware/authorization.js';
 import { authenticateToken } from '../../../middleware/authentication.js';
@@ -33,14 +33,33 @@ orderRouter.post('/',
         }
     });
 
-// GET /api/orders - Get all orders (ADMIN ONLY)
+// GET /api/orders - Get all orders with filters and pagination (ADMIN ONLY)
 orderRouter.get('/', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
-    const result = await service.getAllOrders();
+    try {
+        // Validate query parameters
+        const queryValidation = OrderQueryParamsDTO.safeParse(req.query);
+        
+        if (!queryValidation.success) {
+            return res.status(HttpStatus.BAD_REQUEST).json({
+                success: false,
+                message: 'Invalid query parameters',
+                errors: queryValidation.error.issues,
+            });
+        }
 
-    if (result.success) {
-        return res.status(HttpStatus.OK).json(result);
-    } else {
-        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(result);
+        const filters = queryValidation.data;
+        const result = await service.getOrdersWithFilters(filters);
+
+        if (result.success) {
+            return res.status(HttpStatus.OK).json(result);
+        } else {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(result);
+        }
+    } catch (error: any) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: 'Internal server error',
+        });
     }
 });
 

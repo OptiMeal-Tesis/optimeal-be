@@ -5,6 +5,7 @@ import {
     UpdateOrderStatusRequest,
     OrderResponse,
     OrderListResponse,
+    OrderPaginatedResponse,
     OrderSingleResponse,
     OrderCreateResponse,
     OrderUpdateResponse,
@@ -90,16 +91,28 @@ export class OrderService {
         }
     }
 
-    async getAllOrders(): Promise<OrderListResponse> {
+
+    async getOrdersWithFilters(filters: {
+        page: number;
+        limit: number;
+        nationalId?: string;
+        orderId?: number;
+        userName?: string;
+        shift?: string;
+    }): Promise<OrderPaginatedResponse> {
         try {
-            const orders = await this.orderRepository.findAll();
-            const total = await this.orderRepository.count();
+            const { orders, total, totalPages } = await this.orderRepository.findWithFilters(filters);
 
             return {
                 success: true,
                 message: 'Orders retrieved successfully',
                 data: orders.map(order => this.mapOrderToResponse(order)),
-                total,
+                pagination: {
+                    page: filters.page,
+                    limit: filters.limit,
+                    total,
+                    totalPages,
+                },
             };
         } catch (error: any) {
             return {
@@ -225,6 +238,7 @@ export class OrderService {
                 id: order.user.id,
                 name: order.user.name,
                 email: order.user.email,
+                national_id: order.user.national_id,
             },
             status: order.status,
             totalPrice: order.totalPrice,

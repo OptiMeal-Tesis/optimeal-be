@@ -26,7 +26,6 @@ enum UserTypeEnum {
 
 enum OrderStatus {
   PENDING
-  CONFIRMED
   PREPARING
   READY
   DELIVERED
@@ -34,15 +33,15 @@ enum OrderStatus {
 }
 
 model User {
-  id          Int     @id @default(autoincrement())
-  email       String  @unique
+  id          Int          @id @default(autoincrement())
+  email       String       @unique
   name        String?
-  national_id String @unique
+  national_id String       @unique
   password    String
   role        UserTypeEnum @default(USER)
-  cognito_sub String? @unique
-  
-  orders      Order[]
+  cognito_sub String?      @unique
+
+  orders Order[]
 }
 
 model Product {
@@ -58,42 +57,42 @@ model Product {
   stock                Int               @default(0)
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
-  
-  orderItems           OrderItem[]
+
+  orderItems OrderItem[]
 }
 
 model Side {
   id       Int     @id @default(autoincrement())
   name     String
   isActive Boolean @default(true)
-  
+
   products       Product[]
   orderItemSides OrderItemSide[]
 }
 
 model Order {
-  id          Int         @id @default(autoincrement())
-  userId      Int
-  user        User        @relation(fields: [userId], references: [id])
-  status      OrderStatus @default(PENDING)
-  totalPrice  Int
-  pickUpTime  DateTime
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  
-  orderItems  OrderItem[]
+  id         Int         @id @default(autoincrement())
+  userId     Int
+  user       User        @relation(fields: [userId], references: [id])
+  status     OrderStatus @default(PENDING)
+  totalPrice Int
+  pickUpTime DateTime
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  orderItems OrderItem[]
 }
 
 model OrderItem {
-  id          Int     @id @default(autoincrement())
-  orderId     Int
-  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId   Int
-  product     Product @relation(fields: [productId], references: [id])
-  quantity    Int     @default(1)
-  unitPrice   Int
-  notes       String?
-  
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int     @default(1)
+  unitPrice Int
+  notes     String?
+
   orderItemSide OrderItemSide?
 }
 

@@ -28,3 +28,40 @@ export const OrderIdParamDTO = z.object({
         return num;
     }),
 });
+
+export const OrderQueryParamsDTO = z.object({
+    page: z.string().optional().transform((val) => {
+        if (!val) return 1;
+        const num = parseInt(val, 10);
+        if (isNaN(num) || num < 1) {
+            throw new Error('Page must be a positive integer');
+        }
+        return num;
+    }),
+    limit: z.string().optional().transform((val) => {
+        if (!val) return 10;
+        const num = parseInt(val, 10);
+        if (isNaN(num) || num < 1 || num > 100) {
+            throw new Error('Limit must be between 1 and 100');
+        }
+        return num;
+    }),
+    nationalId: z.string().optional(),
+    orderId: z.string().optional().transform((val) => {
+        if (!val) return undefined;
+        const num = parseInt(val, 10);
+        if (isNaN(num) || num <= 0) {
+            throw new Error('Order ID must be a positive integer');
+        }
+        return num;
+    }),
+    userName: z.string().optional(),
+    shift: z.string().optional().transform((val) => {
+        if (!val) return undefined;
+        const validShifts = ['11-12', '12-13', '13-14', '14-15', 'all'];
+        if (!validShifts.includes(val)) {
+            throw new Error('Shift must be one of: 11-12, 12-13, 13-14, 14-15, all');
+        }
+        return val;
+    }),
+});

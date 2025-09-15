@@ -42,6 +42,7 @@ export interface OrderResponse {
         id: number;
         name?: string;
         email: string;
+        national_id?: string;
     };
     status: OrderStatus;
     totalPrice: number;
@@ -56,6 +57,18 @@ export interface OrderListResponse {
     message: string;
     data?: OrderResponse[];
     total?: number;
+}
+
+export interface OrderPaginatedResponse {
+    success: boolean;
+    message: string;
+    data?: OrderResponse[];
+    pagination?: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+    };
 }
 
 export interface OrderSingleResponse {

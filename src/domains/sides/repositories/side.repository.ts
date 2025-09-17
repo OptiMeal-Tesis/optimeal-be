@@ -39,10 +39,10 @@ export class SideRepository {
         });
     }
 
-    async updateIsActive(id: number, isActive: boolean): Promise<Side> {
+    async update(id: number, data: { name: string; isActive: boolean; }): Promise<Side> {
         return await this.prisma.side.update({
             where: { id },
-            data: { isActive }
+            data
         });
     }
 }

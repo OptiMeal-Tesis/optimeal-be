@@ -122,6 +122,63 @@ export const swaggerPaths = {
     },
 
     '/sides/{id}': {
+        put: {
+            tags: ['Sides'],
+            summary: 'Actualizar un side',
+            description: 'Actualiza el nombre y estado de un acompañamiento. Requiere rol ADMIN.',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+                {
+                    in: 'path',
+                    name: 'id',
+                    required: true,
+                    schema: { type: 'integer' },
+                    description: 'ID del side',
+                    example: 1
+                }
+            ],
+            requestBody: {
+                required: true,
+                content: {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                name: { type: 'string', example: 'Papas fritas grandes' },
+                                isActive: { type: 'boolean', example: true }
+                            },
+                            required: ['name', 'isActive']
+                        }
+                    }
+                }
+            },
+            responses: {
+                '200': {
+                    description: 'Side actualizado exitosamente',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/Side' }
+                        }
+                    }
+                },
+                '400': {
+                    description: 'Error en la validación',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+                },
+                '401': {
+                    description: 'No autorizado',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+                },
+                '403': {
+                    description: 'Acceso denegado (solo administradores)',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+                },
+                '404': {
+                    description: 'Side no encontrado',
+                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
+                }
+            }
+        },
         delete: {
             tags: ['Sides'],
             summary: 'Eliminar un side por ID',
@@ -163,64 +220,6 @@ export const swaggerPaths = {
         }
     },
 
-    '/sides/{id}/active': {
-        patch: {
-            tags: ['Sides'],
-            summary: 'Actualizar isActive de un side',
-            description: 'Actualiza el estado activo/inactivo de un side. Requiere rol ADMIN.',
-            security: [{ bearerAuth: [] }],
-            parameters: [
-                {
-                    in: 'path',
-                    name: 'id',
-                    required: true,
-                    schema: { type: 'integer' },
-                    description: 'ID del side',
-                    example: 1
-                }
-            ],
-            requestBody: {
-                required: true,
-                content: {
-                    'application/json': {
-                        schema: {
-                            type: 'object',
-                            properties: {
-                                isActive: { type: 'boolean', example: true }
-                            },
-                            required: ['isActive']
-                        }
-                    }
-                }
-            },
-            responses: {
-                '200': {
-                    description: 'Side actualizado exitosamente',
-                    content: {
-                        'application/json': {
-                            schema: { $ref: '#/components/schemas/Side' }
-                        }
-                    }
-                },
-                '400': {
-                    description: 'Error en la validación',
-                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
-                },
-                '401': {
-                    description: 'No autorizado',
-                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
-                },
-                '403': {
-                    description: 'Acceso denegado (solo administradores)',
-                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
-                },
-                '404': {
-                    description: 'Side no encontrado',
-                    content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } }
-                }
-            }
-        }
-    },
     // Auth endpoints
     '/auth/signup': {
         post: {

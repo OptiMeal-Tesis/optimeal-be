@@ -42,7 +42,7 @@ export interface OrderResponse {
         id: number;
         name?: string;
         email: string;
-        national_id?: string;
+        nationalId?: string;
     };
     status: OrderStatus;
     totalPrice: number;

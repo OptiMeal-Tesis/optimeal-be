@@ -13,7 +13,7 @@ export const BodyValidation = (schema: z.ZodSchema) => {
             if (error instanceof z.ZodError) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Validation error',
+                    message: 'Error de validación',
                     errors: error.issues.map((err: any) => ({
                         field: err.path.join('.'),
                         message: err.message,
@@ -37,7 +37,7 @@ export const ParamsValidation = (schema: z.ZodSchema) => {
             if (error instanceof z.ZodError) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Validation error',
+                    message: 'Error de validación',
                     errors: error.issues.map((err: any) => ({
                         field: err.path.join('.'),
                         message: err.message,

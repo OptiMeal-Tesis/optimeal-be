@@ -188,37 +188,25 @@ export class OrderService {
 
     private async validateProductsExist(items: CreateOrderRequest['items']): Promise<void> {
         const productIds = items.map(item => item.productId);
-        const products = await this.orderRepository['prisma'].product.findMany({
-            where: { id: { in: productIds } },
-        });
+        const { missing } = await this.orderRepository.validateProductsExist(productIds);
 
-        if (products.length !== productIds.length) {
-            const foundIds = products.map(p => p.id);
-            const missingIds = productIds.filter(id => !foundIds.includes(id));
-            throw new Error(`Products not found: ${missingIds.join(', ')}`);
+        if (missing.length > 0) {
+            throw new Error(`Products not found: ${missing.join(', ')}`);
         }
     }
 
     private async validateSidesExist(items: CreateOrderRequest['items']): Promise<void> {
         const sideIds = items.filter(item => item.sideId).map(item => item.sideId!);
-        
-        if (sideIds.length === 0) return;
+        const { missing } = await this.orderRepository.validateSidesExist(sideIds);
 
-        const sides = await this.orderRepository['prisma'].side.findMany({
-            where: { id: { in: sideIds } },
-        });
-
-        if (sides.length !== sideIds.length) {
-            const foundIds = sides.map(s => s.id);
-            const missingIds = sideIds.filter(id => !foundIds.includes(id));
-            throw new Error(`Sides not found: ${missingIds.join(', ')}`);
+        if (missing.length > 0) {
+            throw new Error(`Sides not found: ${missing.join(', ')}`);
         }
     }
 
     private validateStatusTransition(currentStatus: OrderStatus, newStatus: OrderStatus): void {
         const validTransitions: Record<OrderStatus, OrderStatus[]> = {
-            [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
-            [OrderStatus.CONFIRMED]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
+            [OrderStatus.PENDING]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
             [OrderStatus.PREPARING]: [OrderStatus.READY, OrderStatus.CANCELLED],
             [OrderStatus.READY]: [OrderStatus.DELIVERED],
             [OrderStatus.DELIVERED]: [],

@@ -106,7 +106,7 @@ export class AuthService {
         }
     }
 
-    async login(loginRequest: LoginRequest): Promise<LoginResponse> {
+    async login(loginRequest: LoginRequest, isBackoffice: boolean = false): Promise<LoginResponse> {
         try {
             this.validateLoginRequest(loginRequest);
 
@@ -116,6 +116,14 @@ export class AuthService {
                 return {
                     success: false,
                     message: 'Usuario no encontrado en la base de datos',
+                };
+            }
+
+            // If this is a backoffice login, check if user is ADMIN
+            if (isBackoffice && userResult.data.role !== 'ADMIN') {
+                return {
+                    success: false,
+                    message: 'Acceso denegado. Solo los administradores pueden acceder al backoffice.',
                 };
             }
 

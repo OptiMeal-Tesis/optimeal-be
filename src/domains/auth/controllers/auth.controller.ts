@@ -34,8 +34,9 @@ authRouter.post('/confirm', BodyValidation(ConfirmSignupInputDTO), async (req: R
 
 authRouter.post('/login', BodyValidation(LoginInputDTO), async (req: Request, res: Response) => {
     const data = req.body;
+    const isBackoffice = req.query.isBackoffice === 'true';
 
-    const result = await service.login(data);
+    const result = await service.login(data, isBackoffice);
 
     if (result.success) {
         return res.status(HttpStatus.OK).json(result);

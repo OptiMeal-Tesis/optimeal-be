@@ -252,6 +252,34 @@ export class OrderRepository {
         return total;
     }
 
+    async validateProductsExist(productIds: number[]): Promise<{ found: number[]; missing: number[] }> {
+        const products = await this.prisma.product.findMany({
+            where: { id: { in: productIds } },
+            select: { id: true },
+        });
+
+        const foundIds = products.map(p => p.id);
+        const missingIds = productIds.filter(id => !foundIds.includes(id));
+
+        return { found: foundIds, missing: missingIds };
+    }
+
+    async validateSidesExist(sideIds: number[]): Promise<{ found: number[]; missing: number[] }> {
+        if (sideIds.length === 0) {
+            return { found: [], missing: [] };
+        }
+
+        const sides = await this.prisma.side.findMany({
+            where: { id: { in: sideIds } },
+            select: { id: true },
+        });
+
+        const foundIds = sides.map(s => s.id);
+        const missingIds = sideIds.filter(id => !foundIds.includes(id));
+
+        return { found: foundIds, missing: missingIds };
+    }
+
     async disconnect(): Promise<void> {
         await this.prisma.$disconnect();
     }

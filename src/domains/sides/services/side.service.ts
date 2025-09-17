@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { SideRepository } from '../repositories/side.repository.js';
 import { SideDeleteResponse, SideListResponse, SideResponse } from '../models/Side.js';
-import { CreateSideInputDTO, UpdateSideActiveInputDTO } from '../dto/side.dto.js';
+import { CreateSideInputDTO, UpdateSideInputDTO } from '../dto/side.dto.js';
 
 type Side = Prisma.SideGetPayload<{}>;
 
@@ -73,13 +73,22 @@ export class SideService {
         };
     }
 
-    async updateIsActive(id: number, body: UpdateSideActiveInputDTO): Promise<{ success: boolean; message: string; data?: SideResponse; }> {
+    async update(id: number, data: UpdateSideInputDTO): Promise<{ success: boolean; message: string; data?: SideResponse; }> {
         try {
             const exists = await this.sideRepository.findById(id);
             if (!exists) {
                 return { success: false, message: 'Side not found' };
             }
-            const updated = await this.sideRepository.updateIsActive(id, !!body.isActive);
+
+            if (!data.name || data.name.trim().length === 0) {
+                return { success: false, message: 'Side name is required' };
+            }
+
+            const updated = await this.sideRepository.update(id, {
+                name: data.name.trim(),
+                isActive: !!data.isActive
+            });
+
             return { success: true, message: 'Side updated successfully', data: this.mapToResponse(updated) };
         } catch (error: any) {
             return { success: false, message: error.message || 'Internal server error' };

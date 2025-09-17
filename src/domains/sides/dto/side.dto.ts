@@ -16,12 +16,13 @@ export const CreateSideInputDTO = z.object({
 
 export type CreateSideInputDTO = z.infer<typeof CreateSideInputDTO>;
 
-export const UpdateSideActiveInputDTO = z.object({
+export const UpdateSideInputDTO = z.object({
+    name: z.string().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
     isActive: z.union([
         z.boolean(),
         z.string().transform((val) => val === 'true')
     ])
 });
 
-export type UpdateSideActiveInputDTO = z.infer<typeof UpdateSideActiveInputDTO>;
+export type UpdateSideInputDTO = z.infer<typeof UpdateSideInputDTO>;
 

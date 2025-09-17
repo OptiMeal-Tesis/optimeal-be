@@ -4,7 +4,7 @@ import { SideService } from '../services/side.service.js';
 import { authenticateToken } from '../../../middleware/authentication.js';
 import { requireAdmin } from '../../../middleware/authorization.js';
 import { BodyValidation, ParamsValidation } from '../../../middleware/validation.js';
-import { SideIdParamDTO, CreateSideInputDTO, UpdateSideActiveInputDTO } from '../dto/side.dto.js';
+import { SideIdParamDTO, CreateSideInputDTO, UpdateSideInputDTO } from '../dto/side.dto.js';
 
 export const sideRouter = Router();
 
@@ -56,10 +56,10 @@ sideRouter.post('/', authenticateToken, requireAdmin, BodyValidation(CreateSideI
     }
 });
 
-// PUT /api/sides/:id/active - Update isActive (ADMIN ONLY)
-sideRouter.put('/:id/active', authenticateToken, requireAdmin, ParamsValidation(SideIdParamDTO), BodyValidation(UpdateSideActiveInputDTO), async (req: Request, res: Response) => {
+// PUT /api/sides/:id - Update side (name and isActive) (ADMIN ONLY)
+sideRouter.put('/:id', authenticateToken, requireAdmin, ParamsValidation(SideIdParamDTO), BodyValidation(UpdateSideInputDTO), async (req: Request, res: Response) => {
     const { id } = req.params;
-    const result = await service.updateIsActive(Number(id), req.body);
+    const result = await service.update(Number(id), req.body);
 
     if (result.success) {
         return res.status(HttpStatus.OK).json(result);

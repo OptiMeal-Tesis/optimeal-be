@@ -24,7 +24,7 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
     if (!req.user) {
         return res.status(HttpStatus.UNAUTHORIZED).json({
             success: false,
-            message: 'Authentication required',
+            message: 'Autenticación requerida',
         });
     }
 
@@ -32,7 +32,7 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
     if (req.user.role !== UserTypeEnum.ADMIN) {
         return res.status(HttpStatus.FORBIDDEN).json({
             success: false,
-            message: 'Admin access required',
+            message: 'Acceso denegado: se requieren privilegios de administrador',
         });
     }
 
@@ -46,7 +46,7 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
     if (!req.user) {
         return res.status(HttpStatus.UNAUTHORIZED).json({
             success: false,
-            message: 'Authentication required',
+            message: 'Autenticación requerida',
         });
     }
 

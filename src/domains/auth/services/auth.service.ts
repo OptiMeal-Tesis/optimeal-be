@@ -115,7 +115,7 @@ export class AuthService {
             if (!userResult.success || !userResult.data || Array.isArray(userResult.data)) {
                 return {
                     success: false,
-                    message: 'Usuario no encontrado en la base de datos',
+                    message: 'Usuario no encontrado',
                 };
             }
 

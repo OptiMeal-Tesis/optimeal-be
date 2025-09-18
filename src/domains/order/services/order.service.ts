@@ -163,11 +163,31 @@ export class OrderService {
             throw new Error('Pickup time is required');
         }
 
-        // Validate pickup time is in the future
+        // Argentina timezone validations
+        const ARG_TZ = 'America/Argentina/Buenos_Aires';
+        
+        // Parse pickup time (assume it's in Argentina timezone)
         const pickupDate = new Date(request.pickUpTime);
         const now = new Date();
+        
+        // Get current time in Argentina
+        const nowInARG = new Intl.DateTimeFormat('sv-SE', { timeZone: ARG_TZ }).format(now);
+        const pickupInARG = new Intl.DateTimeFormat('sv-SE', { timeZone: ARG_TZ }).format(pickupDate);
+        
+        // Validate same day
+        if (nowInARG.split(' ')[0] !== pickupInARG.split(' ')[0]) {
+            throw new Error('Pickup time must be for today (Argentina time)');
+        }
+        
+        // Validate future time
         if (pickupDate <= now) {
-            throw new Error('Pickup time must be in the future');
+            throw new Error('Pickup time must be in the future (Argentina time)');
+        }
+        
+        // Validate shift hours (11-15 Argentina time)
+        const pickupHour = pickupDate.getHours();
+        if (![11, 12, 13, 14].includes(pickupHour)) {
+            throw new Error('Pickup time must be within allowed shifts (11-15 Argentina time)');
         }
 
         // Validate each item

@@ -163,11 +163,23 @@ export class OrderRepository {
             }
         }
 
-        // Handle shift filtering based on pickUpTime
+        // Handle date and shift filtering based on pickUpTime (Argentina timezone)
+        const ARG_TZ = 'America/Argentina/Buenos_Aires';
+        
+        // Get today's date in Argentina timezone
+        const now = new Date();
+        const todayInARG = new Intl.DateTimeFormat('en-CA', {
+            timeZone: ARG_TZ,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        }).format(now);
+        
+        // Parse the date components
+        const [year, month, day] = todayInARG.split('-').map(Number);
+        
         if (shift && shift !== 'all') {
-            const today = new Date();
-            const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-            
+            // Filter by specific shift of today
             let startHour: number, endHour: number;
             
             switch (shift) {
@@ -192,15 +204,22 @@ export class OrderRepository {
                     endHour = 23;
             }
 
-            const shiftStart = new Date(startOfDay);
-            shiftStart.setHours(startHour, 0, 0, 0);
-            
-            const shiftEnd = new Date(startOfDay);
-            shiftEnd.setHours(endHour, 0, 0, 0);
+            // Create date range for today in Argentina timezone
+            const shiftStart = new Date(year, month - 1, day, startHour, 0, 0, 0);
+            const shiftEnd = new Date(year, month - 1, day, endHour, 0, 0, 0);
 
             where.pickUpTime = {
                 gte: shiftStart,
                 lt: shiftEnd,
+            };
+        } else {
+            // Default and shift=all: show only today's orders (all shifts)
+            const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+            const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+
+            where.pickUpTime = {
+                gte: startOfDay,
+                lte: endOfDay,
             };
         }
 

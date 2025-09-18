@@ -30,6 +30,7 @@ enum OrderStatus {
   READY
   DELIVERED
   CANCELLED
+  CONFIRMED
 }
 
 model User {

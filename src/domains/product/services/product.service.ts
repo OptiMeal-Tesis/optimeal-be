@@ -45,7 +45,7 @@ export class ProductService {
 
             return {
                 success: true,
-                message: 'Product created successfully',
+                message: 'Producto creado exitosamente',
                 data: {
                     id: product.id,
                     name: product.name,
@@ -67,13 +67,13 @@ export class ProductService {
             if (!product) {
                 return {
                     success: false,
-                    message: 'Product not found',
+                    message: 'Producto no encontrado',
                 };
             }
 
             return {
                 success: true,
-                message: 'Product retrieved successfully',
+                message: 'Producto existosamente recuperado',
                 data: this.mapProductToResponse(product),
             };
         } catch (error: any) {
@@ -91,7 +91,7 @@ export class ProductService {
 
             return {
                 success: true,
-                message: 'Products retrieved successfully',
+                message: 'Productos recuperados exitosamente',
                 data: products.map(product => this.mapProductToResponse(product)),
                 total,
             };
@@ -114,7 +114,7 @@ export class ProductService {
             if (!existingProduct) {
                 return {
                     success: false,
-                    message: 'Product not found',
+                    message: 'Producto no encontrado',
                 };
             }
 
@@ -131,7 +131,7 @@ export class ProductService {
                         try {
                             await S3Service.deleteFile(oldKey);
                         } catch (error) {
-                            console.warn('Failed to delete old photo from S3:', error);
+                            console.warn('Falló en borrar la foto anterior dentro de S3:', error);
                         }
                     }
                 }
@@ -149,7 +149,7 @@ export class ProductService {
 
             return {
                 success: true,
-                message: 'Product updated successfully',
+                message: 'Producto actualizado exitosamente',
                 data: this.mapProductToResponse(updatedProduct),
             };
         } catch (error: any) {
@@ -167,7 +167,7 @@ export class ProductService {
             if (!existingProduct) {
                 return {
                     success: false,
-                    message: 'Product not found',
+                    message: 'Producto no encontrado',
                 };
             }
 
@@ -178,7 +178,7 @@ export class ProductService {
                     try {
                         await S3Service.deleteFile(key);
                     } catch (error) {
-                        console.warn('Failed to delete photo from S3:', error);
+                        console.warn('Falló en borrar foto de S3:', error);
                     }
                 }
             }
@@ -187,7 +187,7 @@ export class ProductService {
 
             return {
                 success: true,
-                message: 'Product deleted successfully',
+                message: 'Producto eliminado exitosamente',
             };
         } catch (error: any) {
             return {
@@ -199,41 +199,41 @@ export class ProductService {
 
     private validateCreateProductRequest(request: CreateProductRequest): void {
         if (!request.name || request.name.trim().length === 0) {
-            throw new Error('Product name is required');
+            throw new Error('Nombre del producto requerido');
         }
 
         if (!request.description || request.description.trim().length === 0) {
-            throw new Error('Product description is required');
+            throw new Error('Descripción del producto requerida');
         }
 
         if (!request.price || request.price <= 0) {
-            throw new Error('Product price must be greater than 0');
+            throw new Error('El precio del producto debe ser mayor a 0');
         }
 
         if (!request.type) {
-            throw new Error('Product type is required');
+            throw new Error('Tipo de producto requerido');
         }
 
         if (request.photo && !this.isValidUrl(request.photo)) {
-            throw new Error('Product photo must be a valid URL');
+            throw new Error('La foto del producto debe ser una URL válida');
         }
     }
 
     private validateUpdateProductRequest(request: UpdateProductRequest): void {
         if (request.name !== undefined && (!request.name || request.name.trim().length === 0)) {
-            throw new Error('Product name cannot be empty');
+            throw new Error('El nombre del producto no puede estar vacío');
         }
 
         if (request.description !== undefined && (!request.description || request.description.trim().length === 0)) {
-            throw new Error('Product description cannot be empty');
+            throw new Error('La descripción del producto no puede estar vacía');
         }
 
         if (request.price !== undefined && request.price <= 0) {
-            throw new Error('Product price must be greater than 0');
+            throw new Error('El precio del producto debe ser mayor a 0');
         }
 
         if (request.photo !== undefined && request.photo && !this.isValidUrl(request.photo)) {
-            throw new Error('Product photo must be a valid URL');
+            throw new Error('La foto del producto debe ser una URL válida');
         }
     }
 
@@ -269,11 +269,11 @@ export class ProductService {
 
     private getErrorMessage(error: any): string {
         if (error.code === 'P2002') {
-            return 'A product with this name already exists';
+            return 'Ya existe un producto con ese nombre';
         }
         if (error.code === 'P2025') {
-            return 'Product not found';
+            return 'Producto no encontrado';
         }
-        return error.message || 'Internal server error';
+        return error.message || 'Error interno del servidor';
     }
 }

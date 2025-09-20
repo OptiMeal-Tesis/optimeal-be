@@ -117,3 +117,27 @@ orderRouter.put('/:id/status',
         }
     }
 );
+
+// GET /api/orders/shift/dishes - Get dishes summary by shift (ADMIN ONLY)
+orderRouter.get('/shift/dishes', 
+    authenticateToken, 
+    requireAdmin,
+    async (req: Request, res: Response) => {
+        try {
+            const { shift } = req.query;
+            const shiftParam = shift as string || 'all';
+            const result = await service.getDishesByShift(shiftParam);
+
+            if (result.success) {
+                return res.status(HttpStatus.OK).json(result);
+            } else {
+                return res.status(HttpStatus.BAD_REQUEST).json(result);
+            }
+        } catch (error: any) {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: 'Internal server error',
+            });
+        }
+    }
+);

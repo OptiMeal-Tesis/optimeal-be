@@ -806,5 +806,136 @@ export const swaggerPaths = {
                 }
             }
         }
+    },
+
+    // Order endpoints
+    '/orders/shift/dishes': {
+        get: {
+            tags: ['Orders'],
+            summary: 'Obtener resumen de platos por turno',
+            description: 'Retorna un resumen de los platos principales y acompañamientos que se deben preparar para un turno específico del día actual. Los turnos disponibles son: 11-12, 12-13, 13-14, 14-15, y "all" para todos los turnos del día. Si no se especifica turno, por defecto usa "all". Requiere rol ADMIN.',
+            security: [{ bearerAuth: [] }],
+            parameters: [
+                {
+                    in: 'query',
+                    name: 'shift',
+                    required: false,
+                    schema: {
+                        type: 'string',
+                        enum: ['11-12', '12-13', '13-14', '14-15', 'all']
+                    },
+                    description: 'Turno para el cual obtener el resumen de platos. Valores válidos: 11-12, 12-13, 13-14, 14-15, all. Por defecto es "all"',
+                    example: '12-13'
+                }
+            ],
+            responses: {
+                '200': {
+                    description: 'Resumen de platos obtenido exitosamente',
+                    content: {
+                        'application/json': {
+                            schema: {
+                                $ref: '#/components/schemas/ShiftDishesResponse'
+                            },
+                            example: {
+                                success: true,
+                                message: 'Dishes retrieved successfully',
+                                data: {
+                                    shift: '12-13',
+                                    mainDishes: [
+                                        {
+                                            id: 1,
+                                            name: 'Pechuga de pollo con guarnición',
+                                            totalToPrepare: 20,
+                                            preparedQuantity: 15,
+                                            remainingToPrepare: 5,
+                                            photo: 'https://example.com/chicken.jpg'
+                                        },
+                                        {
+                                            id: 2,
+                                            name: 'Carne al horno con papas',
+                                            totalToPrepare: 17,
+                                            preparedQuantity: 12,
+                                            remainingToPrepare: 5,
+                                            photo: 'https://example.com/roasted-meat.jpg'
+                                        }
+                                    ],
+                                    sides: [
+                                        {
+                                            id: 1,
+                                            name: 'Puré de papas',
+                                            totalToPrepare: 20,
+                                            preparedQuantity: 15,
+                                            remainingToPrepare: 5
+                                        },
+                                        {
+                                            id: 2,
+                                            name: 'Papas fritas',
+                                            totalToPrepare: 20,
+                                            preparedQuantity: 15,
+                                            remainingToPrepare: 5
+                                        }
+                                    ],
+                                    totalMainDishes: 37,
+                                    totalSides: 40
+                                }
+                            }
+                        }
+                    }
+                },
+                '400': {
+                    description: 'Error en los parámetros de consulta',
+                    content: {
+                        'application/json': {
+                            schema: {
+                                $ref: '#/components/schemas/Error'
+                            },
+                            example: {
+                                success: false,
+                                message: 'Invalid query parameters',
+                                errors: [
+                                    {
+                                        code: 'invalid_enum_value',
+                                        expected: ['11-12', '12-13', '13-14', '14-15', 'all'],
+                                        received: 'invalid-shift',
+                                        path: ['shift'],
+                                        message: 'Invalid enum value'
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                '401': {
+                    description: 'No autorizado',
+                    content: {
+                        'application/json': {
+                            schema: {
+                                $ref: '#/components/schemas/Error'
+                            }
+                        }
+                    }
+                },
+                '403': {
+                    description: 'Acceso denegado (solo administradores)',
+                    content: {
+                        'application/json': {
+                            schema: {
+                                $ref: '#/components/schemas/Error'
+                            }
+                        }
+                    }
+                },
+                '500': {
+                    description: 'Error interno del servidor',
+                    content: {
+                        'application/json': {
+                            schema: {
+                                $ref: '#/components/schemas/Error'
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 };

@@ -92,3 +92,32 @@ export interface OrderUpdateResponse {
     message: string;
     data?: OrderResponse;
 }
+
+export interface DishSummary {
+    id: number;
+    name: string;
+    totalToPrepare: number;
+    preparedQuantity: number;
+    remainingToPrepare: number;
+    photo?: string;
+}
+
+export interface SideSummary {
+    id: number;
+    name: string;
+    totalToPrepare: number;
+    preparedQuantity: number;
+    remainingToPrepare: number;
+}
+
+export interface ShiftDishesResponse {
+    success: boolean;
+    message: string;
+    data?: {
+        shift: string;
+        mainDishes: DishSummary[];
+        sides: SideSummary[];
+        totalMainDishes: number;
+        totalSides: number;
+    };
+}

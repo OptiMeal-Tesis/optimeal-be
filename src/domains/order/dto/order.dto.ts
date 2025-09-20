@@ -65,3 +65,21 @@ export const OrderQueryParamsDTO = z.object({
         return val;
     }),
 });
+
+export const ShiftDishesQueryDTO = z.object({
+    shift: z.string().transform((val) => {
+        const validShifts = ['11-12', '12-13', '13-14', '14-15', 'all'];
+        if (!validShifts.includes(val)) {
+            throw new Error('Shift must be one of: 11-12, 12-13, 13-14, 14-15, all');
+        }
+        return val;
+    }),
+    date: z.string().optional().transform((val) => {
+        if (!val) return new Date().toISOString().split('T')[0]; // Default to today
+        const date = new Date(val);
+        if (isNaN(date.getTime())) {
+            throw new Error('Date must be a valid date in YYYY-MM-DD format');
+        }
+        return val;
+    }),
+});

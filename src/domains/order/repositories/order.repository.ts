@@ -395,6 +395,157 @@ export class OrderRepository {
         return { found: foundIds, missing: missingIds };
     }
 
+    async getDishesByShift(shift: string): Promise<{
+        mainDishes: Array<{
+            id: number;
+            name: string;
+            totalToPrepare: number;
+            preparedQuantity: number;
+            photo?: string;
+        }>;
+        sides: Array<{
+            id: number;
+            name: string;
+            totalToPrepare: number;
+            preparedQuantity: number;
+        }>;
+    }> {
+        // Always use current date
+        const targetDate = new Date().toISOString().split('T')[0];
+        
+        // Get date components (YYYY-MM-DD format)
+        const [year, month, day] = targetDate.split('-').map(Number);
+        
+        let startHour: number, endHour: number;
+        
+        if (shift === 'all') {
+            // For 'all' shift, get all orders for the day
+            startHour = 0;
+            endHour = 23;
+        } else {
+            // Map shift strings to hour ranges
+            switch (shift) {
+                case '11-12':
+                    startHour = 11;
+                    endHour = 12;
+                    break;
+                case '12-13':
+                    startHour = 12;
+                    endHour = 13;
+                    break;
+                case '13-14':
+                    startHour = 13;
+                    endHour = 14;
+                    break;
+                case '14-15':
+                    startHour = 14;
+                    endHour = 15;
+                    break;
+                default:
+                    // If shift is not recognized, return empty results
+                    return {
+                        mainDishes: [],
+                        sides: []
+                    };
+            }
+        }
+
+        // Create date range for the shift
+        const shiftStart = new Date(year, month - 1, day, startHour, 0, 0, 0);
+        const shiftEnd = new Date(year, month - 1, day, endHour, 0, 0, 0);
+
+        // Get all orders for the shift
+        const orders = await this.prisma.order.findMany({
+            where: {
+                pickUpTime: {
+                    gte: shiftStart,
+                    lte: shiftEnd,
+                },
+                status: {
+                    not: 'CANCELLED'
+                }
+            },
+            include: {
+                orderItems: {
+                    include: {
+                        product: true,
+                        orderItemSide: {
+                            include: {
+                                side: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        // Aggregate main dishes (products)
+        const mainDishesMap = new Map<number, {
+            id: number;
+            name: string;
+            totalToPrepare: number;
+            preparedQuantity: number;
+            photo?: string;
+        }>();
+
+        // Aggregate sides
+        const sidesMap = new Map<number, {
+            id: number;
+            name: string;
+            totalToPrepare: number;
+            preparedQuantity: number;
+        }>();
+
+        // Process each order
+        for (const order of orders) {
+            for (const item of order.orderItems) {
+                // Count main dishes (products)
+                const productId = item.productId;
+                const productName = item.product.name;
+                const productPhoto = item.product.photo;
+                const quantity = item.quantity;
+                
+                if (mainDishesMap.has(productId)) {
+                    const existing = mainDishesMap.get(productId)!;
+                    existing.totalToPrepare += quantity;
+                    // For now, we'll assume preparedQuantity is 0
+                    // In a real scenario, you might track this separately
+                } else {
+                    mainDishesMap.set(productId, {
+                        id: productId,
+                        name: productName,
+                        totalToPrepare: quantity,
+                        preparedQuantity: 0,
+                        photo: productPhoto || undefined,
+                    });
+                }
+
+                // Count sides if present
+                if (item.orderItemSide) {
+                    const sideId = item.orderItemSide.sideId;
+                    const sideName = item.orderItemSide.side.name;
+                    
+                    if (sidesMap.has(sideId)) {
+                        const existing = sidesMap.get(sideId)!;
+                        existing.totalToPrepare += quantity;
+                    } else {
+                        sidesMap.set(sideId, {
+                            id: sideId,
+                            name: sideName,
+                            totalToPrepare: quantity,
+                            preparedQuantity: 0,
+                        });
+                    }
+                }
+            }
+        }
+
+        return {
+            mainDishes: Array.from(mainDishesMap.values()),
+            sides: Array.from(sidesMap.values()),
+        };
+    }
+
     async disconnect(): Promise<void> {
         await this.prisma.$disconnect();
     }

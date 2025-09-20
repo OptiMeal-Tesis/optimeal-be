@@ -10,6 +10,9 @@ import {
     OrderCreateResponse,
     OrderUpdateResponse,
     OrderItemResponse,
+    ShiftDishesResponse,
+    DishSummary,
+    SideSummary,
 } from '../models/Order.js';
 
 export class OrderService {
@@ -271,6 +274,72 @@ export class OrderService {
                 id: item.orderItemSide.side.id,
                 name: item.orderItemSide.side.name,
             } : undefined,
+        };
+    }
+
+    async getDishesByShift(shift: string): Promise<ShiftDishesResponse> {
+        try {
+            // Use 'all' as default if no shift provided
+            const shiftToUse = shift || 'all';
+            
+            // Validate parameters
+            const validationResult = this.validateShiftDishesParams(shiftToUse);
+            if (!validationResult.success) {
+                return validationResult;
+            }
+
+            const { mainDishes, sides } = await this.orderRepository.getDishesByShift(shiftToUse);
+
+            // Calculate remaining quantities
+            const mainDishesWithRemaining: DishSummary[] = mainDishes.map(dish => ({
+                ...dish,
+                remainingToPrepare: dish.totalToPrepare - dish.preparedQuantity,
+            }));
+
+            const sidesWithRemaining: SideSummary[] = sides.map(side => ({
+                ...side,
+                remainingToPrepare: side.totalToPrepare - side.preparedQuantity,
+            }));
+
+            // Calculate totals
+            const totalMainDishes = mainDishesWithRemaining.reduce((sum, dish) => sum + dish.totalToPrepare, 0);
+            const totalSides = sidesWithRemaining.reduce((sum, side) => sum + side.totalToPrepare, 0);
+
+            return {
+                success: true,
+                message: 'Dishes retrieved successfully',
+                data: {
+                    shift: shiftToUse,
+                    mainDishes: mainDishesWithRemaining,
+                    sides: sidesWithRemaining,
+                    totalMainDishes,
+                    totalSides,
+                },
+            };
+        } catch (error: any) {
+            return {
+                success: false,
+                message: this.getErrorMessage(error),
+            };
+        }
+    }
+
+    private validateShiftDishesParams(shift: string): ShiftDishesResponse {
+        const validShifts = ['11-12', '12-13', '13-14', '14-15', 'all'];
+        
+        // Use 'all' as default if no shift provided
+        const shiftToValidate = shift || 'all';
+
+        if (!validShifts.includes(shiftToValidate)) {
+            return {
+                success: false,
+                message: `Invalid shift. Valid values are: ${validShifts.join(', ')}`,
+            };
+        }
+
+        return {
+            success: true,
+            message: 'Parameters are valid',
         };
     }
 

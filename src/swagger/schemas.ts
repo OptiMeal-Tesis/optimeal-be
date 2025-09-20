@@ -412,5 +412,120 @@ export const swaggerSchemas = {
                 example: '2024-01-15T10:30:00Z'
             }
         }
+    },
+
+    // Order Schemas
+    DishSummary: {
+        type: 'object',
+        properties: {
+            id: {
+                type: 'integer',
+                example: 1,
+                description: 'ID del plato principal'
+            },
+            name: {
+                type: 'string',
+                example: 'Pechuga de pollo con guarnición',
+                description: 'Nombre del plato principal'
+            },
+            totalToPrepare: {
+                type: 'integer',
+                example: 20,
+                description: 'Cantidad total a preparar'
+            },
+            preparedQuantity: {
+                type: 'integer',
+                example: 15,
+                description: 'Cantidad ya preparada'
+            },
+            remainingToPrepare: {
+                type: 'integer',
+                example: 5,
+                description: 'Cantidad restante por preparar'
+            },
+            photo: {
+                type: 'string',
+                format: 'uri',
+                example: 'https://example.com/chicken.jpg',
+                description: 'URL de la foto del plato (opcional)'
+            }
+        }
+    },
+    SideSummary: {
+        type: 'object',
+        properties: {
+            id: {
+                type: 'integer',
+                example: 1,
+                description: 'ID del acompañamiento'
+            },
+            name: {
+                type: 'string',
+                example: 'Puré de papas',
+                description: 'Nombre del acompañamiento'
+            },
+            totalToPrepare: {
+                type: 'integer',
+                example: 20,
+                description: 'Cantidad total a preparar'
+            },
+            preparedQuantity: {
+                type: 'integer',
+                example: 15,
+                description: 'Cantidad ya preparada'
+            },
+            remainingToPrepare: {
+                type: 'integer',
+                example: 5,
+                description: 'Cantidad restante por preparar'
+            }
+        }
+    },
+    ShiftDishesResponse: {
+        type: 'object',
+        properties: {
+            success: {
+                type: 'boolean',
+                example: true
+            },
+            message: {
+                type: 'string',
+                example: 'Dishes retrieved successfully'
+            },
+            data: {
+                type: 'object',
+                properties: {
+                    shift: {
+                        type: 'string',
+                        example: '12-13',
+                        description: 'Turno consultado'
+                    },
+                    mainDishes: {
+                        type: 'array',
+                        items: {
+                            $ref: '#/components/schemas/DishSummary'
+                        },
+                        description: 'Lista de platos principales'
+                    },
+                    sides: {
+                        type: 'array',
+                        items: {
+                            $ref: '#/components/schemas/SideSummary'
+                        },
+                        description: 'Lista de acompañamientos'
+                    },
+                    totalMainDishes: {
+                        type: 'integer',
+                        example: 37,
+                        description: 'Total de platos principales a preparar'
+                    },
+                    totalSides: {
+                        type: 'integer',
+                        example: 40,
+                        description: 'Total de acompañamientos a preparar'
+                    }
+                }
+            }
+        }
     }
 };

@@ -29,42 +29,48 @@ export class OrderRepository {
     async create(orderData: CreateOrderRequest): Promise<Order> {
         const { userId, items, pickUpTime } = orderData;
 
-        const totalPrice = await this.calculateTotalPrice(items);
+        // Use a transaction to ensure atomicity
+        return await this.prisma.$transaction(async (tx) => {
+            // First, validate and reserve stock for all products
+            await this.validateAndReserveStock(tx, items);
 
-        return await this.prisma.order.create({
-            data: {
-                userId,
-                totalPrice,
-                pickUpTime: new Date(pickUpTime),
-                orderItems: {
-                    create: items.map(item => ({
-                        productId: item.productId,
-                        quantity: item.quantity,
-                        unitPrice: 0, // Will be calculated
-                        notes: item.notes,
-                        ...(item.sideId && {
-                            orderItemSide: {
-                                create: {
-                                    sideId: item.sideId,
+            const totalPrice = await this.calculateTotalPrice(tx, items);
+
+            return await tx.order.create({
+                data: {
+                    userId,
+                    totalPrice,
+                    pickUpTime: new Date(pickUpTime),
+                    orderItems: {
+                        create: items.map(item => ({
+                            productId: item.productId,
+                            quantity: item.quantity,
+                            unitPrice: 0, // Will be calculated
+                            notes: item.notes,
+                            ...(item.sideId && {
+                                orderItemSide: {
+                                    create: {
+                                        sideId: item.sideId,
+                                    },
                                 },
-                            },
-                        }),
-                    })),
+                            }),
+                        })),
+                    },
                 },
-            },
-            include: {
-                user: true,
-                orderItems: {
-                    include: {
-                        product: true,
-                        orderItemSide: {
-                            include: {
-                                side: true,
+                include: {
+                    user: true,
+                    orderItems: {
+                        include: {
+                            product: true,
+                            orderItemSide: {
+                                include: {
+                                    side: true,
+                                },
                             },
                         },
                     },
                 },
-            },
+            });
         });
     }
 
@@ -109,22 +115,29 @@ export class OrderRepository {
 
 
     async updateStatus(id: number, status: OrderStatus): Promise<Order> {
-        return await this.prisma.order.update({
-            where: { id },
-            data: { status },
-            include: {
-                user: true,
-                orderItems: {
-                    include: {
-                        product: true,
-                        orderItemSide: {
-                            include: {
-                                side: true,
+        return await this.prisma.$transaction(async (tx) => {
+            // If cancelling an order, restore stock
+            if (status === OrderStatus.CANCELLED) {
+                await this.restoreStock(tx, id);
+            }
+
+            return await tx.order.update({
+                where: { id },
+                data: { status },
+                include: {
+                    user: true,
+                    orderItems: {
+                        include: {
+                            product: true,
+                            orderItemSide: {
+                                include: {
+                                    side: true,
+                                },
                             },
                         },
                     },
                 },
-            },
+            });
         });
     }
 
@@ -255,11 +268,11 @@ export class OrderRepository {
         };
     }
 
-    private async calculateTotalPrice(items: CreateOrderRequest['items']): Promise<number> {
+    private async calculateTotalPrice(tx: any, items: CreateOrderRequest['items']): Promise<number> {
         let total = 0;
 
         for (const item of items) {
-            const product = await this.prisma.product.findUnique({
+            const product = await tx.product.findUnique({
                 where: { id: item.productId },
             });
 
@@ -269,6 +282,89 @@ export class OrderRepository {
         }
 
         return total;
+    }
+
+    private async validateAndReserveStock(tx: any, items: CreateOrderRequest['items']): Promise<void> {
+        const unavailableProducts: { id: number; name: string; requested: number; available: number }[] = [];
+
+        // Get all products with their current stock
+        const productIds = items.map(item => item.productId);
+        const products = await tx.product.findMany({
+            where: { id: { in: productIds } },
+            select: { id: true, name: true, stock: true }
+        });
+
+        // Create a map for quick lookup
+        const productMap = new Map<number, { id: number; name: string; stock: number }>(
+            products.map((p: { id: number; name: string; stock: number }) => [p.id, p])
+        );
+
+        // Check stock availability for each item
+        for (const item of items) {
+            const product = productMap.get(item.productId);
+            
+            if (!product) {
+                throw new Error(`Product with ID ${item.productId} not found`);
+            }
+
+            if (product.stock < item.quantity) {
+                unavailableProducts.push({
+                    id: product.id,
+                    name: product.name,
+                    requested: item.quantity,
+                    available: product.stock
+                });
+            }
+        }
+
+        // If any products are unavailable, throw an error with details
+        if (unavailableProducts.length > 0) {
+            const errorMessage = unavailableProducts
+                .map(p => `${p.name} (ID: ${p.id}): requested ${p.requested}, available ${p.available}`)
+                .join('; ');
+            throw new Error(`Insufficient stock for products: ${errorMessage}`);
+        }
+
+        // Reserve stock by updating each product with atomic check
+        for (const item of items) {
+            const updatedProduct = await tx.product.updateMany({
+                where: { 
+                    id: item.productId,
+                    stock: { gte: item.quantity } // Only update if stock is sufficient
+                },
+                data: {
+                    stock: {
+                        decrement: item.quantity
+                    }
+                }
+            });
+
+            // If no rows were updated, it means stock was insufficient
+            if (updatedProduct.count === 0) {
+                const product = productMap.get(item.productId);
+                throw new Error(`Insufficient stock for product ${product?.name} (ID: ${item.productId}): requested ${item.quantity}, but stock was insufficient`);
+            }
+        }
+    }
+
+    private async restoreStock(tx: any, orderId: number): Promise<void> {
+        // Get all order items for this order
+        const orderItems = await tx.orderItem.findMany({
+            where: { orderId },
+            select: { productId: true, quantity: true }
+        });
+
+        // Restore stock for each product
+        for (const item of orderItems) {
+            await tx.product.update({
+                where: { id: item.productId },
+                data: {
+                    stock: {
+                        increment: item.quantity
+                    }
+                }
+            });
+        }
     }
 
     async validateProductsExist(productIds: number[]): Promise<{ found: number[]; missing: number[] }> {

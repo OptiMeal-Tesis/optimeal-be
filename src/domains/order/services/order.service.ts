@@ -163,30 +163,27 @@ export class OrderService {
             throw new Error('Pickup time is required');
         }
 
-        // Argentina timezone validations
-        const ARG_TZ = 'America/Argentina/Buenos_Aires';
-        
-        // Parse pickup time (assume it's in Argentina timezone)
+        // UTC validations
         const pickupDate = new Date(request.pickUpTime);
         const now = new Date();
         
-        // Get current time in Argentina
-        const nowInARG = new Intl.DateTimeFormat('sv-SE', { timeZone: ARG_TZ }).format(now);
-        const pickupInARG = new Intl.DateTimeFormat('sv-SE', { timeZone: ARG_TZ }).format(pickupDate);
+        // Get date strings for comparison (YYYY-MM-DD format)
+        const nowDateStr = now.toISOString().split('T')[0];
+        const pickupDateStr = pickupDate.toISOString().split('T')[0];
         
         // Validate same day
-        if (nowInARG.split(' ')[0] !== pickupInARG.split(' ')[0]) {
-            throw new Error('Pickup time must be for today (Argentina time)');
+        if (nowDateStr !== pickupDateStr) {
+            throw new Error('Pickup time must be for today');
         }
         
         // Validate future time
         if (pickupDate <= now) {
-            throw new Error('Pickup time must be in the future (Argentina time)');
+            throw new Error('Pickup time must be in the future');
         }
         
-        // Validate shift hours (11-15 Argentina time)
+        // Validate shift hours (14-18 UTC, which corresponds to 11-15 Argentina time)
         const pickupHour = pickupDate.getHours();
-        if (![11, 12, 13, 14].includes(pickupHour)) {
+        if (![14, 15, 16, 17, 18].includes(pickupHour)) {
             throw new Error('Pickup time must be within allowed shifts (11-15 Argentina time)');
         }
 
@@ -283,6 +280,13 @@ export class OrderService {
         }
         if (error.code === 'P2025') {
             return 'Order not found';
+        }
+        // Handle stock-related errors
+        if (error.message && error.message.includes('Insufficient stock')) {
+            return error.message;
+        }
+        if (error.message && error.message.includes('Product with ID')) {
+            return error.message;
         }
         return error.message || 'Internal server error';
     }

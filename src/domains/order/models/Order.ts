@@ -93,7 +93,7 @@ export interface OrderUpdateResponse {
     data?: OrderResponse;
 }
 
-export interface DishSummary {
+export interface OrderSummary {
     id: number;
     name: string;
     totalToPrepare: number;
@@ -110,12 +110,12 @@ export interface SideSummary {
     remainingToPrepare: number;
 }
 
-export interface ShiftDishesResponse {
+export interface ShiftSummaryResponse {
     success: boolean;
     message: string;
     data?: {
         shift: string;
-        mainDishes: DishSummary[];
+        mainDishes: OrderSummary[];
         sides: SideSummary[];
         totalMainDishes: number;
         totalSides: number;

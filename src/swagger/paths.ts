@@ -809,7 +809,7 @@ export const swaggerPaths = {
     },
 
     // Order endpoints
-    '/orders/shift/dishes': {
+    '/orders/shift/summary': {
         get: {
             tags: ['Orders'],
             summary: 'Obtener resumen de platos por turno',

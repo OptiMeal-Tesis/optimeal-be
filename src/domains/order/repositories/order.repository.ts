@@ -395,7 +395,7 @@ export class OrderRepository {
         return { found: foundIds, missing: missingIds };
     }
 
-    async getDishesByShift(shift: string): Promise<{
+    async getShiftSummary(shift: string): Promise<{
         mainDishes: Array<{
             id: number;
             name: string;
@@ -505,17 +505,20 @@ export class OrderRepository {
                 const productPhoto = item.product.photo;
                 const quantity = item.quantity;
                 
+                // Calculate prepared quantity based on order status
+                const isDelivered = order.status === 'DELIVERED';
+                const preparedQuantity = isDelivered ? quantity : 0;
+                
                 if (mainDishesMap.has(productId)) {
                     const existing = mainDishesMap.get(productId)!;
                     existing.totalToPrepare += quantity;
-                    // For now, we'll assume preparedQuantity is 0
-                    // In a real scenario, you might track this separately
+                    existing.preparedQuantity += preparedQuantity;
                 } else {
                     mainDishesMap.set(productId, {
                         id: productId,
                         name: productName,
                         totalToPrepare: quantity,
-                        preparedQuantity: 0,
+                        preparedQuantity: preparedQuantity,
                         photo: productPhoto || undefined,
                     });
                 }
@@ -528,12 +531,13 @@ export class OrderRepository {
                     if (sidesMap.has(sideId)) {
                         const existing = sidesMap.get(sideId)!;
                         existing.totalToPrepare += quantity;
+                        existing.preparedQuantity += preparedQuantity;
                     } else {
                         sidesMap.set(sideId, {
                             id: sideId,
                             name: sideName,
                             totalToPrepare: quantity,
-                            preparedQuantity: 0,
+                            preparedQuantity: preparedQuantity,
                         });
                     }
                 }

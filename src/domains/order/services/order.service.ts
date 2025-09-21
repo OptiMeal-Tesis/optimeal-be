@@ -378,7 +378,7 @@ export class OrderService {
 
   private getErrorMessage(error: any): string {
     if (error.code === "P2002") {
-      return "A order with this data already exists";
+      return "A record with this data already exists";
     }
     if (error.code === "P2025") {
       return "Order not found";
@@ -388,6 +388,12 @@ export class OrderService {
       return error.message;
     }
     if (error.message && error.message.includes("Product with ID")) {
+      return error.message;
+    }
+    if (error.message && error.message.includes("Sides not found")) {
+      return error.message;
+    }
+    if (error.message && error.message.includes("Products not found")) {
       return error.message;
     }
     return error.message || "Internal server error";

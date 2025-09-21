@@ -5,6 +5,7 @@ import { healthRouter } from "../domains/health/health.controller.js";
 import { productRouter } from "../domains/product/controllers/product.controller.js";
 import { sideRouter } from "../domains/sides/controllers/side.controller.js";
 import { orderRouter } from "../domains/order/controllers/order.controller.js";
+import { statsRouter } from "../domains/stats/controllers/stats.controller.js";
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use("/health", healthRouter);
 router.use("/products", productRouter);
 router.use("/sides", sideRouter);
 router.use("/orders", orderRouter);
+router.use("/stats", statsRouter);
 
 export { router };

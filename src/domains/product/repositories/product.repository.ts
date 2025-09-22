@@ -32,52 +32,71 @@ export class ProductRepository {
     }
 
     async findById(id: number): Promise<Product | null> {
-        return await this.prisma.product.findUnique({
-            where: { id },
+        return await this.prisma.product.findFirst({
+            where: {
+              id,
+              deletedAt: null,
+            },
             include: {
-                sides: true
-            }
+              sides: true,
+            },
         });
     }
 
     async findAll(): Promise<Product[]> {
         return await this.prisma.product.findMany({
+            where: {
+              deletedAt: null,
+            },
             orderBy: { createdAt: 'desc' },
             include: {
-                sides: true
-            }
+              sides: true,
+            },
         });
     }
 
     async update(id: number, productData: UpdateProductRequest): Promise<Product> {
         const { sides, ...rest } = productData;
         return await this.prisma.product.update({
-            where: { id },
+            where: {
+              id,
+              deletedAt: null,
+            },
             data: {
-                ...rest,
-                ...(sides !== undefined && {
-                    sides: {
-                        set: sides.map(id => ({ id }))
-                    }
-                })
+              ...rest,
+              ...(sides !== undefined && {
+                sides: {
+                  set: sides.map((id) => ({ id })),
+                },
+              }),
             },
             include: {
-                sides: true
-            }
+              sides: true,
+            },
         });
     }
 
     async delete(id: number): Promise<Product> {
-        return await this.prisma.product.delete({
-            where: { id },
-            include: {
-                sides: true
-            }
+      return await this.prisma.product.update({
+          where: {
+            id,
+            deletedAt: null,
+          },
+          data: {
+            deletedAt: new Date(),
+          },
+          include: {
+            sides: true,
+          },
         });
     }
 
     async count(): Promise<number> {
-        return await this.prisma.product.count();
+        return await this.prisma.product.count({
+          where: {
+            deletedAt: null,
+          },
+        });
     }
 
     async searchByName(name: string): Promise<Product[]> {

@@ -276,8 +276,11 @@ export class OrderRepository {
     let total = 0;
 
     for (const item of items) {
-      const product = await tx.product.findUnique({
-        where: { id: item.productId },
+      const product = await tx.product.findFirst({
+        where: {
+          id: item.productId,
+          deletedAt: null, // Only include products that are not deleted
+        },
       });
 
       if (product) {
@@ -299,10 +302,13 @@ export class OrderRepository {
       available: number;
     }[] = [];
 
-    // Get all products with their current stock
+    // Get all products with their current stock (only non-deleted products)
     const productIds = items.map((item) => item.productId);
     const products = await tx.product.findMany({
-      where: { id: { in: productIds } },
+      where: {
+        id: { in: productIds },
+        deletedAt: null, // Only include products that are not deleted
+      },
       select: { id: true, name: true, stock: true },
     });
 
@@ -394,7 +400,10 @@ export class OrderRepository {
     productIds: number[]
   ): Promise<{ found: number[]; missing: number[] }> {
     const products = await this.prisma.product.findMany({
-      where: { id: { in: productIds } },
+      where: {
+        id: { in: productIds },
+        deletedAt: null, // Only include products that are not deleted
+      },
       select: { id: true },
     });
 

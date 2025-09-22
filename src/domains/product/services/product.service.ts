@@ -160,30 +160,19 @@ export class ProductService {
         }
     }
 
-    async deleteProduct(id: number): Promise<ProductDeleteResponse> {
-        try {
-            // Check if product exists
-            const existingProduct = await this.productRepository.findById(id);
-            if (!existingProduct) {
-                return {
-                    success: false,
-                    message: 'Producto no encontrado',
-                };
-            }
+  async deleteProduct(id: number): Promise<ProductDeleteResponse> {
+    try {
+      // Check if product exists and is active
+      const existingProduct = await this.productRepository.findById(id);
+      if (!existingProduct) {
+        return {
+          success: false,
+          message: "Producto no encontrado o ya eliminado",
+        };
+      }
 
-            // Delete photo from S3 if it exists
-            if (existingProduct.photo && S3Service.isValidS3Url(existingProduct.photo)) {
-                const key = S3Service.extractKeyFromUrl(existingProduct.photo);
-                if (key) {
-                    try {
-                        await S3Service.deleteFile(key);
-                    } catch (error) {
-                        console.warn('Falló en borrar foto de S3:', error);
-                    }
-                }
-            }
-
-            await this.productRepository.delete(id);
+      // Soft delete the product (mark as deleted)
+      await this.productRepository.delete(id);
 
             return {
                 success: true,

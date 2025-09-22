@@ -33,6 +33,9 @@ export class OrderService {
       // Validate that sides exist if provided
       await this.validateSidesExist(orderData.items);
 
+      // Validate that sides are compatible with products
+      await this.validateProductSideCompatibility(orderData.items);
+
       const order = await this.orderRepository.create(orderData);
 
       return {
@@ -238,6 +241,19 @@ export class OrderService {
     }
   }
 
+  private async validateProductSideCompatibility(
+    items: CreateOrderRequest["items"]
+  ): Promise<void> {
+    const { valid, errors } =
+      await this.orderRepository.validateProductSideCompatibility(items);
+
+    if (!valid) {
+      throw new Error(
+        `Product-Side compatibility errors: ${errors.join(", ")}`
+      );
+    }
+  }
+
   private validateStatusTransition(
     currentStatus: OrderStatus,
     newStatus: OrderStatus
@@ -394,6 +410,12 @@ export class OrderService {
       return error.message;
     }
     if (error.message && error.message.includes("Products not found")) {
+      return error.message;
+    }
+    if (
+      error.message &&
+      error.message.includes("Product-Side compatibility errors")
+    ) {
       return error.message;
     }
     return error.message || "Internal server error";

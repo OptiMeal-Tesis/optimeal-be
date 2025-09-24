@@ -14,6 +14,11 @@ services:
       - AWS_REGION=${AWS_REGION:-us-east-1}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - MP_ACCESS_TOKEN=${MP_ACCESS_TOKEN}
+      - MP_WEBHOOK_URL=${MP_WEBHOOK_URL}
+      - MP_BACK_URL_SUCCESS=${MP_BACK_URL_SUCCESS}
+      - MP_BACK_URL_FAILURE=${MP_BACK_URL_FAILURE}
+      - MP_BACK_URL_PENDING=${MP_BACK_URL_PENDING}
     depends_on:
       optimeal-db:
         condition: service_healthy

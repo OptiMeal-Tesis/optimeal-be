@@ -32,6 +32,14 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum CheckoutStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
 model User {
   id          Int          @id @default(autoincrement())
   email       String       @unique
@@ -42,6 +50,7 @@ model User {
   cognito_sub String?      @unique
 
   orders Order[]
+  checkouts Checkout[]
 }
 
 model Product {
@@ -60,6 +69,7 @@ model Product {
   updatedAt            DateTime          @updatedAt
 
   orderItems OrderItem[]
+  checkoutItems CheckoutItem[]
 }
 
 model Side {
@@ -69,6 +79,7 @@ model Side {
 
   products       Product[]
   orderItemSides OrderItemSide[]
+  checkoutItems  CheckoutItem[]
 }
 
 model Order {
@@ -103,4 +114,34 @@ model OrderItemSide {
   orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
   sideId      Int
   side        Side      @relation(fields: [sideId], references: [id])
+}
+
+model Checkout {
+  id               Int             @id @default(autoincrement())
+  userId           Int
+  user             User            @relation(fields: [userId], references: [id])
+  status           CheckoutStatus  @default(PENDING)
+  totalPrice       Int
+  pickUpTime       DateTime
+  externalReference String         @unique
+  preferenceId     String?         @unique
+  initPoint        String?
+  expiresAt        DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  items CheckoutItem[]
+}
+
+model CheckoutItem {
+  id          Int       @id @default(autoincrement())
+  checkoutId  Int
+  checkout    Checkout  @relation(fields: [checkoutId], references: [id], onDelete: Cascade)
+  productId   Int
+  product     Product   @relation(fields: [productId], references: [id])
+  quantity    Int       @default(1)
+  unitPrice   Int
+  notes       String?
+  sideId      Int?
+  side        Side?     @relation(fields: [sideId], references: [id])
 }

@@ -44,16 +44,38 @@ export class ProductRepository {
     }
 
     async findAll(): Promise<Product[]> {
-        return await this.prisma.product.findMany({
-            where: {
-              deletedAt: null,
-            },
-            orderBy: { createdAt: 'desc' },
-            include: {
-              sides: true,
-            },
+        const products = await this.prisma.product.findMany({
+            where: { deletedAt: null },
+            include: { sides: true },
+        });
+
+        const groupRank = (p: Product) => {
+            const isOutOfStock = p.stock == null || p.stock === 0;
+            const isFood = p.type === 'FOOD';
+            const isDrink = p.type === 'BEVERAGE';
+
+            if (isFood && !isOutOfStock) return 0;
+            if (isFood &&  isOutOfStock) return 1;
+            if (isDrink && !isOutOfStock) return 2;
+            return 3;
+        };
+
+        return products.sort((productA, productB) => {
+            const rankA = groupRank(productA);
+            const rankB = groupRank(productB);
+
+            if (rankA !== rankB) {
+                return rankA - rankB;
+            }
+
+            // Si son del mismo grupo, ordenar por stock descendente
+            const stockA = productA.stock ?? -1;
+            const stockB = productB.stock ?? -1;
+
+            return stockB - stockA;
         });
     }
+
 
     async update(id: number, productData: UpdateProductRequest): Promise<Product> {
         const { sides, ...rest } = productData;

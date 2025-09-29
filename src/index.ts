@@ -21,9 +21,11 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-// Express 5-safe preflight handler without wildcard route patterns
+// Robust preflight handler: reflect requested method/headers for Express 5
 app.use((req, res, next) => {
     const origin = req.headers.origin as string | undefined;
+    const requestedMethod = (req.headers['access-control-request-method'] as string | undefined) ?? undefined;
+    const requestedHeaders = (req.headers['access-control-request-headers'] as string | undefined) ?? undefined;
     const allowedOrigins = corsOptions.origin as string[];
     const isAllowed = origin ? allowedOrigins.includes(origin) : false;
 
@@ -31,8 +33,8 @@ app.use((req, res, next) => {
         res.header('Access-Control-Allow-Origin', origin);
         res.header('Vary', 'Origin');
         res.header('Access-Control-Allow-Credentials', 'true');
-        res.header('Access-Control-Allow-Methods', corsOptions.methods!.join(', '));
-        res.header('Access-Control-Allow-Headers', (corsOptions.allowedHeaders as string[]).join(', '));
+        res.header('Access-Control-Allow-Methods', requestedMethod ?? (corsOptions.methods as string[]).join(', '));
+        res.header('Access-Control-Allow-Headers', requestedHeaders ?? (corsOptions.allowedHeaders as string[]).join(', '));
     }
 
     if (req.method === 'OPTIONS') {

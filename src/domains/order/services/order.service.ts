@@ -40,7 +40,7 @@ export class OrderService {
 
       return {
         success: true,
-        message: "Order created successfully",
+        message: "Orden creada exitosamente",
         data: {
           id: order.id,
           status: order.status,
@@ -62,13 +62,13 @@ export class OrderService {
       if (!order) {
         return {
           success: false,
-          message: "Order not found",
+          message: "No se encontró la orden",
         };
       }
 
       return {
         success: true,
-        message: "Order retrieved successfully",
+        message: "Orden encontrada",
         data: this.mapOrderToResponse(order),
       };
     } catch (error: any) {
@@ -86,7 +86,7 @@ export class OrderService {
 
       return {
         success: true,
-        message: "Orders retrieved successfully",
+        message: "Ordenes recuperadas exitosamente",
         data: orders.map((order) => this.mapOrderToResponse(order)),
         total,
       };
@@ -112,7 +112,7 @@ export class OrderService {
 
       return {
         success: true,
-        message: "Orders retrieved successfully",
+        message: "Ordenes encontradas exitosamente",
         data: orders.map((order) => this.mapOrderToResponse(order)),
         pagination: {
           page: filters.page,
@@ -139,7 +139,7 @@ export class OrderService {
       if (!existingOrder) {
         return {
           success: false,
-          message: "Order not found",
+          message: "Orden no encontrada",
         };
       }
 
@@ -149,7 +149,7 @@ export class OrderService {
 
       return {
         success: true,
-        message: "Order status updated successfully",
+        message: "Estado de la orden actualizado exitosamente",
         data: this.mapOrderToResponse(updatedOrder),
       };
     } catch (error: any) {
@@ -162,15 +162,15 @@ export class OrderService {
 
   private validateCreateOrderRequest(request: CreateOrderRequest): void {
     if (!request.userId || request.userId <= 0) {
-      throw new Error("Valid user ID is required");
+      throw new Error("Se requiere un ID de usuario válido");
     }
 
     if (!request.items || request.items.length === 0) {
-      throw new Error("Order must contain at least one item");
+      throw new Error("La orden debe contener al menos un ítem");
     }
 
     if (!request.pickUpTime) {
-      throw new Error("Pickup time is required");
+      throw new Error("El horario de retiro de la orden es obligatorio");
     }
 
     // UTC validations
@@ -183,34 +183,34 @@ export class OrderService {
 
     // Validate same day
     if (nowDateStr !== pickupDateStr) {
-      throw new Error("Pickup time must be for today");
+      throw new Error("El horario de retiro debe ser el mismo día");
     }
 
     // Validate future time
     if (pickupDate <= now) {
-      throw new Error("Pickup time must be in the future");
+      throw new Error("El horario de retiro debe ser en el futuro");
     }
 
     // Validate shift hours (14-18 UTC, which corresponds to 11-15 Argentina time)
     const pickupHour = pickupDate.getHours();
     if (![14, 15, 16, 17, 18].includes(pickupHour)) {
       throw new Error(
-        "Pickup time must be within allowed shifts (11-15 Argentina time)"
+        "El horario de retiro debe estar entre las 12:00 y 15:00 hora Argentina (14:00 a 18:00 UTC)"
       );
     }
 
     // Validate each item
     request.items.forEach((item, index) => {
       if (!item.productId || item.productId <= 0) {
-        throw new Error(`Item ${index + 1}: Valid product ID is required`);
+        throw new Error(`Item ${index + 1}: Se requiere un ID de producto válido`);
       }
 
       if (!item.quantity || item.quantity <= 0) {
-        throw new Error(`Item ${index + 1}: Quantity must be greater than 0`);
+        throw new Error(`Item ${index + 1}: La cantidad debe ser mayor a 0`);
       }
 
       if (item.sideId && item.sideId <= 0) {
-        throw new Error(`Item ${index + 1}: Valid side ID is required`);
+        throw new Error(`Item ${index + 1}: Se requiere un ID de guarnición válido`);
       }
     });
   }
@@ -224,7 +224,7 @@ export class OrderService {
     );
 
     if (missing.length > 0) {
-      throw new Error(`Products not found: ${missing.join(", ")}`);
+      throw new Error(`Productos no encontrados: ${missing.join(", ")}`);
     }
   }
 
@@ -237,7 +237,7 @@ export class OrderService {
     const { missing } = await this.orderRepository.validateSidesExist(sideIds);
 
     if (missing.length > 0) {
-      throw new Error(`Sides not found: ${missing.join(", ")}`);
+      throw new Error(`Guarniciones no encontradas: ${missing.join(", ")}`);
     }
   }
 
@@ -249,7 +249,7 @@ export class OrderService {
 
     if (!valid) {
       throw new Error(
-        `Product-Side compatibility errors: ${errors.join(", ")}`
+        `Error de compatibilidad Producto-Guarnición: ${errors.join(", ")}`
       );
     }
   }
@@ -268,7 +268,7 @@ export class OrderService {
 
     if (!validTransitions[currentStatus].includes(newStatus)) {
       throw new Error(
-        `Cannot transition from ${currentStatus} to ${newStatus}`
+        `No puede pasar de estado ${currentStatus} a ${newStatus}`
       );
     }
   }
@@ -356,7 +356,7 @@ export class OrderService {
 
       return {
         success: true,
-        message: "Dishes retrieved successfully",
+        message: "Platos del turno recuperados exitosamente",
         data: {
           shift: shiftToUse,
           mainDishes: mainDishesWithRemaining,
@@ -400,7 +400,7 @@ export class OrderService {
       return "Order not found";
     }
     // Handle stock-related errors
-    if (error.message && error.message.includes("Insufficient stock")) {
+    if (error.message && error.message.includes("Stock Insuficiente")) {
       return error.message;
     }
     if (error.message && error.message.includes("Product with ID")) {

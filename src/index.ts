@@ -21,6 +21,25 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+// Express 5-safe preflight handler without wildcard route patterns
+app.use((req, res, next) => {
+    const origin = req.headers.origin as string | undefined;
+    const allowedOrigins = corsOptions.origin as string[];
+    const isAllowed = origin ? allowedOrigins.includes(origin) : false;
+
+    if (origin && isAllowed) {
+        res.header('Access-Control-Allow-Origin', origin);
+        res.header('Vary', 'Origin');
+        res.header('Access-Control-Allow-Credentials', 'true');
+        res.header('Access-Control-Allow-Methods', corsOptions.methods!.join(', '));
+        res.header('Access-Control-Allow-Headers', (corsOptions.allowedHeaders as string[]).join(', '));
+    }
+
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(204);
+    }
+    next();
+});
 app.use(express.json());
 
 // Swagger Documentation

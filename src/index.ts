@@ -28,9 +28,6 @@ const corsDelegate: CorsOptionsDelegate = (req, callback) => {
 };
 
 app.use(cors(corsDelegate));
-// Handle CORS preflight for nested API routes in Express 5
-app.options('/api', cors(corsDelegate));
-app.options('/api/:path(.*)', cors(corsDelegate));
 app.use(express.json());
 
 // Swagger Documentation

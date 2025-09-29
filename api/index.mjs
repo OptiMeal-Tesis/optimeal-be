@@ -2,8 +2,7 @@
 // and mount the compiled router at root so requests to /api/* work.
 import express from "express";
 import cors from "cors";
-import { router } from "../dist/router/index.js";
-import { setupSwagger } from "../dist/swagger/index.js";
+import { healthRouter } from "../dist/domains/health/health.controller.js";
 
 const app = express();
 
@@ -24,11 +23,7 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
 
-// Swagger docs (optional in serverless, but keep parity)
-setupSwagger(app);
-
-// Mount the app router at root inside the serverless function
-app.use('/', router);
+app.use('/health', healthRouter);
 
 export default app;
 

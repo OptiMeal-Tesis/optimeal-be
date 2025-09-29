@@ -2,7 +2,7 @@
 // and mount the compiled router at root so requests to /api/* work.
 import express from "express";
 import cors from "cors";
-import { healthRouter } from "../dist/domains/health/health.controller.js";
+import { router } from "../dist/router/index.js";
 
 const app = express();
 
@@ -20,10 +20,10 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('/(.*)', cors(corsOptions));
+app.options('/:path(*)', cors(corsOptions));
 app.use(express.json());
 
-app.use('/health', healthRouter);
+app.use('/', router);
 
 export default app;
 

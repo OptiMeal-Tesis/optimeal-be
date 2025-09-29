@@ -30,8 +30,14 @@ setupSwagger(app);
 // Routes
 app.use("/api", router);
 
-const port = Number(process.env.PORT) || 3000;
-app.listen(port, () => {
-    console.log(`API listening on http://localhost:${port}`);
-    console.log(`API Documentation available at http://localhost:${port}/api-docs`);
-});
+// Export the app for Vercel
+export default app;
+
+// Only start the server if not in Vercel environment
+if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
+    const port = Number(process.env.PORT) || 3000;
+    app.listen(port, () => {
+        console.log(`API listening on http://localhost:${port}`);
+        console.log(`API Documentation available at http://localhost:${port}/api-docs`);
+    });
+}

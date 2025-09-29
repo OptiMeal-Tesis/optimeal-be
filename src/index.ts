@@ -5,7 +5,23 @@ import { router } from "./router/index.js"
 import { setupSwagger } from "./swagger/index.js";
 
 const app = express();
-app.use(cors());
+
+// Configure CORS to allow specific origins
+const corsOptions = {
+    origin: [
+        'https://d3dkymsuwpt2re.cloudfront.net',
+        'https://d3ejrhibfrfytu.cloudfront.net',
+        'http://localhost:3000', 
+        'http://localhost:3001',
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 // Swagger Documentation

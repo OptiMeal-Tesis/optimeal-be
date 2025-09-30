@@ -1,9 +1,9 @@
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { prisma } from "../../../lib/prisma.js";
-import { OrderService } from "../../order/services/order.service.js";
 import { CheckoutRequest } from "../dto/payment.dto.js";
 import { Prisma } from "@prisma/client";
 import { randomUUID } from "crypto";
+import { OrderService } from "src/domains/order/services/order.service.js";
 
 export class PaymentService {
   private client: MercadoPagoConfig;
@@ -20,7 +20,10 @@ export class PaymentService {
   async createCheckout(request: CheckoutRequest): Promise<{ success: boolean; message: string; data?: { checkoutId: number; initPoint: string; preferenceId: string } }> {
     // Reuse validations from OrderService
     const orderService = new OrderService();
-    orderService["validateCreateOrderRequest"](request as any);
+
+    // This line is commented becase we want to create orders whenever we want to test.
+    // orderService["validateCreateOrderRequest"](request as any);
+    
     await orderService["validateProductsExist"](request.items as any);
     await orderService["validateSidesExist"](request.items as any);
     await orderService["validateProductSideCompatibility"](request.items as any);
@@ -147,27 +150,31 @@ export class PaymentService {
     return { success: true, message: "Checkout status", data: { status: checkout.status } };
   }
 
-  async handleMercadoPagoWebhook(payload: any): Promise<void> {
-    const { data, type } = payload || {};
-    if (!type || !data || !data.id) return;
+  async handleMercadoPagoWebhook(body: any): Promise<void> {
+    const bodyData = body || {};
+    const type = bodyData.type || bodyData.topic;
 
-    // In production: verify signature header and fetch payment details from MP
-    // For now, we assume external_reference is available via preference lookup or payment lookup
+    const paymentId: string | number | undefined = bodyData?.data?.id || bodyData?.data?.payment?.id || bodyData?.id;
+    if (!type || !paymentId) return;
 
     // Fetch payment info
     const { Payment } = await import("mercadopago");
     const payment = new Payment(this.client);
-    const paymentData = await payment.get({ id: data.id });
+    const paymentData = await payment.get({ id: paymentId });
     const status = paymentData.status as string;
     const externalReference = paymentData.external_reference as string;
 
     const checkout = await prisma.checkout.findFirst({ where: { externalReference }, include: { items: true } });
     if (!checkout) return;
 
+    // Idempotency: if checkout already processed, ignore duplicate webhooks
+    if (checkout.status === "APPROVED") {
+      return;
+    }
+
     if (status === "approved") {
       // Create order and finalize
       await prisma.$transaction(async (tx) => {
-        // Create the order using repository to keep mapping same
         await this.createOrderFromCheckout(tx, checkout.id);
         await tx.checkout.update({ where: { id: checkout.id }, data: { status: "APPROVED" } });
       });

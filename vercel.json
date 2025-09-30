@@ -3,7 +3,7 @@
   "buildCommand": "npm run build",
   "functions": {
     "api/[...all].mjs": {
-      "runtime": "nodejs20.x"
+      "runtime": "@vercel/node@3.0.7"
     }
   },
   "rewrites": [

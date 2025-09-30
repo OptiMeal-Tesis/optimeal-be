@@ -1,6 +1,15 @@
 {
   "version": 2,
   "buildCommand": "npm run build",
-  "builds": [],
-  "routes": []
+  "functions": {
+    "api/[...all].mjs": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/[...all]"
+    }
+  ]
 }

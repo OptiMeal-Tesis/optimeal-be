@@ -3,7 +3,7 @@ import { prisma } from "../../../lib/prisma.js";
 import { CheckoutRequest } from "../dto/payment.dto.js";
 import { Prisma } from "@prisma/client";
 import { randomUUID } from "crypto";
-import { OrderService } from "src/domains/order/services/order.service.js";
+import { OrderService } from "../../order/services/order.service.js";
 
 export class PaymentService {
   private client: MercadoPagoConfig;

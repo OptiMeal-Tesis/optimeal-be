@@ -10,8 +10,8 @@ const app = express();
 const allowedOrigins = [
     'https://d3dkymsuwpt2re.cloudfront.net',
     'https://d3ejrhibfrfytu.cloudfront.net',
-    'http://localhost:3000',
-    'http://localhost:3001',
+    'http://localhost:5173',
+    'http://localhost:5174',
 ];
 
 const corsDelegate: CorsOptionsDelegate = (req, callback) => {

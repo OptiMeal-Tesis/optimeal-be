@@ -6,7 +6,6 @@ import { BodyValidation, ParamsValidation } from '../../../middleware/validation
 import { requireAdmin, requireAuth } from '../../../middleware/authorization.js';
 import { authenticateToken } from '../../../middleware/authentication.js';
 import { formDataWithOptionalFile, handleUploadError } from '../../../middleware/upload.js';
-import { ProductTypeEnum, RestrictionEnum } from '@prisma/client';
 
 export const productRouter = Router();
 
@@ -34,7 +33,7 @@ productRouter.post('/',
 
 // GET /api/products - Get all products (AUTHENTICATED USERS)
 productRouter.get('/', authenticateToken, requireAuth, async (req: Request, res: Response) => {
-    const result = await service.getAllProducts();
+    const result = await service.getAllProductsGrouped();
 
     if (result.success) {
         return res.status(HttpStatus.OK).json(result);

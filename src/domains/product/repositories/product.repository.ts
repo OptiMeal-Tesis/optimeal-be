@@ -76,6 +76,34 @@ export class ProductRepository {
         });
     }
 
+    async findAllGrouped(): Promise<{ foods: Product[]; beverages: Product[]; total: number }> {
+        const [foods, beverages, total] = await Promise.all([
+            this.prisma.product.findMany({
+                where: { deletedAt: null, type: 'FOOD' },
+                include: { sides: true },
+            }),
+            this.prisma.product.findMany({
+                where: { deletedAt: null, type: 'BEVERAGE' },
+                include: { sides: true },
+            }),
+            this.count(),
+        ]);
+
+        const sortByStockDescPuttingOutOfStockLast = (a: Product, b: Product) => {
+            const stockA = a.stock ?? -1;
+            const stockB = b.stock ?? -1;
+            return stockB - stockA;
+        };
+
+        return {
+            foods: foods
+                .sort(sortByStockDescPuttingOutOfStockLast),
+            beverages: beverages
+                .sort(sortByStockDescPuttingOutOfStockLast),
+            total,
+        };
+    }
+
 
     async update(id: number, productData: UpdateProductRequest): Promise<Product> {
         const { sides, ...rest } = productData;

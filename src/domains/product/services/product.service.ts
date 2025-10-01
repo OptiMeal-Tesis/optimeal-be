@@ -11,7 +11,8 @@ import {
     ProductSingleResponse,
     ProductCreateResponse,
     ProductUpdateResponse,
-    ProductDeleteResponse
+    ProductDeleteResponse,
+    ProductGroupedListResponse
 } from '../models/Product.js';
 
 export class ProductService {
@@ -93,6 +94,27 @@ export class ProductService {
                 success: true,
                 message: 'Productos recuperados exitosamente',
                 data: products.map(product => this.mapProductToResponse(product)),
+                total,
+            };
+        } catch (error: any) {
+            return {
+                success: false,
+                message: this.getErrorMessage(error),
+            };
+        }
+    }
+
+    async getAllProductsGrouped(): Promise<ProductGroupedListResponse> {
+        try {
+            const { foods, beverages, total } = await this.productRepository.findAllGrouped();
+
+            return {
+                success: true,
+                message: 'Productos recuperados exitosamente',
+                data: {
+                    foods: foods.map(product => this.mapProductToResponse(product)),
+                    beverages: beverages.map(product => this.mapProductToResponse(product)),
+                },
                 total,
             };
         } catch (error: any) {

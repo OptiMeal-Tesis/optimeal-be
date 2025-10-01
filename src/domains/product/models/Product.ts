@@ -46,6 +46,16 @@ export interface ProductListResponse {
     total?: number;
 }
 
+export interface ProductGroupedListResponse {
+    success: boolean;
+    message: string;
+    data?: {
+        foods: ProductResponse[];
+        beverages: ProductResponse[];
+    };
+    total?: number;
+}
+
 export interface ProductSingleResponse {
     success: boolean;
     message: string;

@@ -47,7 +47,7 @@ authRouter.get('/confirm', async (req: Request, res: Response) => {
                         .container { background: white; padding: 40px; border-radius: 16px; text-align: center; max-width: 400px; }
                         h1 { color: #1E1E1E; margin-bottom: 16px; }
                         p { color: #45556C; }
-                        a { color: #414BB5; text-decoration: none; font-weight: 600; }
+                        a { color: #0d47a1; text-decoration: none; font-weight: 600; }
                     </style>
                 </head>
                 <body>
@@ -79,8 +79,8 @@ authRouter.get('/confirm', async (req: Request, res: Response) => {
                         h1 { color: #1E1E1E; margin-bottom: 16px; }
                         p { color: #45556C; margin-bottom: 16px; }
                         .success { color: #10B981; font-size: 48px; margin-bottom: 16px; }
-                        .btn { display: inline-block; border: 2px solid #414BB5; border-radius: 10px; padding: 12px 28px; color: #414BB5; text-decoration: none; font-weight: 600; margin-top: 16px; }
-                        .btn:hover { background-color: #414BB5; color: white; }
+                        .btn { display: inline-block; border: 2px solid #0d47a1; border-radius: 10px; padding: 12px 28px; color: #0d47a1; text-decoration: none; font-weight: 600; margin-top: 16px; }
+                        .btn:hover { background-color: #0d47a1; color: white; }
                     </style>
                 </head>
                 <body>
@@ -105,7 +105,7 @@ authRouter.get('/confirm', async (req: Request, res: Response) => {
                         h1 { color: #1E1E1E; margin-bottom: 16px; }
                         p { color: #45556C; margin-bottom: 16px; }
                         .error { color: #EF4444; font-size: 48px; margin-bottom: 16px; }
-                        .btn { display: inline-block; border: 2px solid #414BB5; border-radius: 10px; padding: 12px 28px; color: #414BB5; text-decoration: none; font-weight: 600; margin-top: 16px; }
+                        .btn { display: inline-block; border: 2px solid #0d47a1; border-radius: 10px; padding: 12px 28px; color: #0d47a1; text-decoration: none; font-weight: 600; margin-top: 16px; }
                     </style>
                 </head>
                 <body>

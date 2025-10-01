@@ -7,7 +7,7 @@
  * Trigger: CustomMessage (Cognito User Pool)
  */
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
     console.log('CustomMessage trigger invoked:', event.triggerSource);
 
     // Handle sign-up verification email
@@ -50,9 +50,9 @@ exports.handler = async (event) => {
 
              <table border="0" cellspacing="0" cellpadding="0" align="center" style="margin:0 auto 8px;">
                <tr>
-                 <td style="border:2px solid #414BB5; border-radius:10px; padding:0; text-align:center;">
+                 <td style="border:2px solid #0d47a1; border-radius:10px; padding:0; text-align:center;">
                    <a href="${verificationUrl}" 
-                      style="display:block; padding:12px 28px; text-decoration:none; font-weight:600; font-size:15px; color:#414BB5; font-family:'Futura', Helvetica, Arial, sans-serif;">
+                      style="display:block; padding:12px 28px; text-decoration:none; font-weight:600; font-size:15px; color:#0d47a1; font-family:'Futura', Helvetica, Arial, sans-serif;">
                      Verificar cuenta
                    </a>
                  </td>
@@ -114,7 +114,7 @@ exports.handler = async (event) => {
              </p>
 
              <div style="background-color:#F7F8FB; padding:16px; border-radius:8px; margin:0 auto 28px; max-width:200px;">
-               <p style="margin:0; font-size:32px; font-weight:700; color:#414BB5; letter-spacing:8px;">
+               <p style="margin:0; font-size:32px; font-weight:700; color:#0d47a1; letter-spacing:8px;">
                  ${code}
                </p>
              </div>

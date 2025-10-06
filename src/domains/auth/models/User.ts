@@ -18,6 +18,23 @@ export interface ConfirmSignUpRequest {
     confirmationCode: string;
 }
 
+export interface ForgotPasswordRequest {
+    email: string;
+}
+
+export interface ConfirmForgotPasswordRequest {
+    email: string;
+    confirmationCode: string;
+    newPassword: string;
+}
+
+export interface ChangePasswordRequest {
+    accessToken: string;
+    oldPassword: string;
+    newPassword: string;
+    userEmail?: string; // Optional email for database update
+}
+
 export interface AuthResponse {
     success: boolean;
     message: string;

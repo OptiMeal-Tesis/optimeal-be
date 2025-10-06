@@ -86,4 +86,11 @@ export class UserRepository {
             orderBy: { id: 'desc' },
         });
     }
+
+    async updateUserPassword(id: number, newPassword: string): Promise<User> {
+        return await this.prisma.user.update({
+            where: { id },
+            data: { password: newPassword },
+        });
+    }
 }

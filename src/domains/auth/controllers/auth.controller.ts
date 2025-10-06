@@ -1,8 +1,16 @@
 import { Request, Response, Router } from 'express';
 import HttpStatus from 'http-status';
 import { AuthService } from '../services/auth.service.js';
-import { SignupInputDTO, LoginInputDTO, ConfirmSignupInputDTO } from '../dto/auth.dto.js';
+import { 
+    SignupInputDTO, 
+    LoginInputDTO, 
+    ConfirmSignupInputDTO,
+    ForgotPasswordInputDTO,
+    ConfirmForgotPasswordInputDTO,
+    ChangePasswordInputDTO
+} from '../dto/auth.dto.js';
 import { BodyValidation } from '../../../middleware/validation.js';
+import { authenticateToken } from '../../../middleware/authentication.js';
 
 export const authRouter = Router();
 
@@ -131,5 +139,66 @@ authRouter.post('/login', BodyValidation(LoginInputDTO), async (req: Request, re
         return res.status(HttpStatus.OK).json(result);
     } else {
         return res.status(HttpStatus.UNAUTHORIZED).json(result);
+    }
+});
+
+// Forgot Password - User requests password recovery code
+authRouter.post('/forgot-password', BodyValidation(ForgotPasswordInputDTO), async (req: Request, res: Response) => {
+    const data = req.body;
+
+    const result = await service.forgotPassword(data);
+
+    if (result.success) {
+        return res.status(HttpStatus.OK).json(result);
+    } else {
+        return res.status(HttpStatus.BAD_REQUEST).json(result);
+    }
+});
+
+// Confirm Forgot Password - User confirms password reset with code
+authRouter.post('/confirm-forgot-password', BodyValidation(ConfirmForgotPasswordInputDTO), async (req: Request, res: Response) => {
+    const data = req.body;
+
+    const result = await service.confirmForgotPassword(data);
+
+    if (result.success) {
+        return res.status(HttpStatus.OK).json(result);
+    } else {
+        return res.status(HttpStatus.BAD_REQUEST).json(result);
+    }
+});
+
+// Change Password - Authenticated user changes their password
+authRouter.post('/change-password', authenticateToken, BodyValidation(ChangePasswordInputDTO), async (req: Request, res: Response) => {
+    const data = req.body;
+    const accessToken = req.headers.authorization?.split(' ')[1];
+
+    if (!accessToken) {
+        return res.status(HttpStatus.UNAUTHORIZED).json({
+            success: false,
+            message: 'Token de acceso no proporcionado',
+        });
+    }
+
+    // Get authenticated user email from req.user (set by authenticateToken middleware)
+    const userEmail = (req as any).user?.email;
+    if (!userEmail) {
+        return res.status(HttpStatus.UNAUTHORIZED).json({
+            success: false,
+            message: 'User email not found in token',
+        });
+    }
+
+    const result = await service.changePassword({
+        accessToken,
+        oldPassword: data.oldPassword,
+        newPassword: data.newPassword,
+        userEmail: userEmail,
+    });
+
+    if (result.success) {
+        return res.status(HttpStatus.OK).json(result);
+    } else {
+        return res.status(HttpStatus.BAD_REQUEST).json(result);
     }
 });

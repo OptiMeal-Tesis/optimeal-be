@@ -3,12 +3,25 @@ import {
     SignUpCommand,
     ConfirmSignUpCommand,
     InitiateAuthCommand,
+    ForgotPasswordCommand,
+    ConfirmForgotPasswordCommand,
+    ChangePasswordCommand,
     AuthFlowType,
     SignUpCommandOutput,
     ConfirmSignUpCommandOutput,
-    InitiateAuthCommandOutput
+    InitiateAuthCommandOutput,
+    ForgotPasswordCommandOutput,
+    ConfirmForgotPasswordCommandOutput,
+    ChangePasswordCommandOutput
 } from '@aws-sdk/client-cognito-identity-provider';
-import { SignUpRequest, LoginRequest, ConfirmSignUpRequest } from '../models/User.js';
+import { 
+    SignUpRequest, 
+    LoginRequest, 
+    ConfirmSignUpRequest,
+    ForgotPasswordRequest,
+    ConfirmForgotPasswordRequest,
+    ChangePasswordRequest
+} from '../models/User.js';
 import { calculateSecretHash } from '../utils/cognitoUtils.js';
 
 export class AuthRepository {
@@ -75,6 +88,38 @@ export class AuthRepository {
                 PASSWORD: loginRequest.password,
                 SECRET_HASH: calculateSecretHash(loginRequest.email),
             },
+        });
+
+        return await this.cognitoClient.send(command);
+    }
+
+    async forgotPassword(forgotPasswordRequest: ForgotPasswordRequest): Promise<ForgotPasswordCommandOutput> {
+        const command = new ForgotPasswordCommand({
+            ClientId: this.clientId,
+            Username: forgotPasswordRequest.email,
+            SecretHash: calculateSecretHash(forgotPasswordRequest.email),
+        });
+
+        return await this.cognitoClient.send(command);
+    }
+
+    async confirmForgotPassword(confirmRequest: ConfirmForgotPasswordRequest): Promise<ConfirmForgotPasswordCommandOutput> {
+        const command = new ConfirmForgotPasswordCommand({
+            ClientId: this.clientId,
+            Username: confirmRequest.email,
+            ConfirmationCode: confirmRequest.confirmationCode,
+            Password: confirmRequest.newPassword,
+            SecretHash: calculateSecretHash(confirmRequest.email),
+        });
+
+        return await this.cognitoClient.send(command);
+    }
+
+    async changePassword(changePasswordRequest: ChangePasswordRequest): Promise<ChangePasswordCommandOutput> {
+        const command = new ChangePasswordCommand({
+            AccessToken: changePasswordRequest.accessToken,
+            PreviousPassword: changePasswordRequest.oldPassword,
+            ProposedPassword: changePasswordRequest.newPassword,
         });
 
         return await this.cognitoClient.send(command);

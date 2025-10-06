@@ -3,6 +3,9 @@ import {
     SignUpRequest,
     LoginRequest,
     ConfirmSignUpRequest,
+    ForgotPasswordRequest,
+    ConfirmForgotPasswordRequest,
+    ChangePasswordRequest,
     AuthResponse,
     LoginResponse
 } from '../models/User.js';
@@ -167,6 +170,11 @@ export class AuthService {
             throw new Error('Formato de email inválido');
         }
 
+        // Validate allowed email domain
+        if (!this.isValidEmailDomain(request.email)) {
+            throw new Error('Solo se permiten correos del dominio @mail.austral.edu.ar');
+        }
+
         if (request.password.length < 8) {
             throw new Error('La contraseña debe tener al menos 8 caracteres');
         }
@@ -209,6 +217,11 @@ export class AuthService {
         return emailRegex.test(email);
     }
 
+    private isValidEmailDomain(email: string): boolean {
+        const allowedDomain = process.env.ALLOWED_EMAIL_DOMAIN!;
+        return email.toLowerCase().endsWith(allowedDomain);
+    }
+
     private isValidNationalId(nationalId: string): boolean {
         // Eliminar espacios y guiones
         const cleanId = nationalId.replace(/[\s-]/g, '');
@@ -216,6 +229,131 @@ export class AuthService {
         // Validar que sea numérico de 7 a 10 dígitos
         const numericRegex = /^\d{7,10}$/;
         return numericRegex.test(cleanId);
+    }
+
+    async forgotPassword(forgotPasswordRequest: ForgotPasswordRequest): Promise<AuthResponse> {
+        try {
+            if (!forgotPasswordRequest.email) {
+                throw new Error('El email es obligatorio');
+            }
+
+            if (!this.isValidEmail(forgotPasswordRequest.email)) {
+                throw new Error('Formato de email inválido');
+            }
+
+            // Check if user exists in database
+            const userResult = await this.userService.getUserByEmail(forgotPasswordRequest.email);
+            if (!userResult.success || !userResult.data || Array.isArray(userResult.data)) {
+                return {
+                    success: false,
+                    message: 'User not found',
+                };
+            }
+
+            await this.authRepository.forgotPassword(forgotPasswordRequest);
+
+            return {
+                success: true,
+                message: 'Se ha enviado un código de verificación a tu correo electrónico',
+                data: {
+                    email: forgotPasswordRequest.email,
+                },
+            };
+        } catch (error: any) {
+            return {
+                success: false,
+                message: this.getErrorMessage(error),
+            };
+        }
+    }
+
+    async confirmForgotPassword(confirmRequest: ConfirmForgotPasswordRequest): Promise<AuthResponse> {
+        try {
+            if (!confirmRequest.email || !confirmRequest.confirmationCode || !confirmRequest.newPassword) {
+                throw new Error('Email, código de confirmación y nueva contraseña son obligatorios');
+            }
+
+            if (!this.isValidEmail(confirmRequest.email)) {
+                throw new Error('Formato de email inválido');
+            }
+
+            if (confirmRequest.confirmationCode.length !== 6) {
+                throw new Error('El código de confirmación debe tener 6 dígitos');
+            }
+
+            if (confirmRequest.newPassword.length < 8) {
+                throw new Error('La nueva contraseña debe tener al menos 8 caracteres');
+            }
+
+            // Confirm password change in Cognito
+            await this.authRepository.confirmForgotPassword(confirmRequest);
+
+            // Update password in local database
+            const updatePasswordResult = await this.userService.updateUserPassword(
+                confirmRequest.email, 
+                confirmRequest.newPassword
+            );
+
+            if (!updatePasswordResult.success) {
+                // If database update fails, log but don't fail the operation
+                console.error('Error updating password in database:', updatePasswordResult.message);
+            }
+
+            return {
+                success: true,
+                message: 'Tu contraseña ha sido cambiada exitosamente',
+                data: {
+                    email: confirmRequest.email,
+                },
+            };
+        } catch (error: any) {
+            return {
+                success: false,
+                message: this.getErrorMessage(error),
+            };
+        }
+    }
+
+    async changePassword(changePasswordRequest: ChangePasswordRequest): Promise<AuthResponse> {
+        try {
+            if (!changePasswordRequest.accessToken || !changePasswordRequest.oldPassword || !changePasswordRequest.newPassword) {
+                throw new Error('Token de acceso, contraseña actual y nueva contraseña son obligatorios');
+            }
+
+            if (changePasswordRequest.newPassword.length < 8) {
+                throw new Error('La nueva contraseña debe tener al menos 8 caracteres');
+            }
+
+            if (changePasswordRequest.oldPassword === changePasswordRequest.newPassword) {
+                throw new Error('La nueva contraseña debe ser diferente a la actual');
+            }
+
+            // Change password in Cognito
+            await this.authRepository.changePassword(changePasswordRequest);
+
+            // Update password in local database if email is provided
+            if (changePasswordRequest.userEmail) {
+                const updatePasswordResult = await this.userService.updateUserPassword(
+                    changePasswordRequest.userEmail, 
+                    changePasswordRequest.newPassword
+                );
+
+                if (!updatePasswordResult.success) {
+                    // If database update fails, log but don't fail the operation
+                    console.error('Error updating password in database:', updatePasswordResult.message);
+                }
+            }
+            
+            return {
+                success: true,
+                message: 'Tu contraseña ha sido cambiada exitosamente',
+            };
+        } catch (error: any) {
+            return {
+                success: false,
+                message: this.getErrorMessage(error),
+            };
+        }
     }
 
     private getErrorMessage(error: any): string {
@@ -236,6 +374,15 @@ export class AuthService {
         }
         if (error.name === 'ExpiredCodeException') {
             return 'El código de verificación ha expirado';
+        }
+        if (error.name === 'LimitExceededException') {
+            return 'Se ha excedido el límite de intentos. Por favor intenta más tarde';
+        }
+        if (error.name === 'InvalidParameterException') {
+            return 'Parámetros inválidos';
+        }
+        if (error.name === 'UserNotFoundException') {
+            return 'Usuario no encontrado';
         }
 
         return error.message || 'Error interno del servidor';

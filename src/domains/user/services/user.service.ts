@@ -260,6 +260,42 @@ export class UserService {
         }
     }
 
+    async updateUserPassword(email: string, newPassword: string): Promise<UserResponse> {
+        try {
+            // Check if user exists
+            const userResult = await this.getUserByEmail(email);
+            if (!userResult.success || !userResult.data || Array.isArray(userResult.data)) {
+                return {
+                    success: false,
+                    message: 'User not found',
+                };
+            }
+
+            // Ensure we have a valid user object
+            const user = userResult.data as any;
+            if (!user || !user.id) {
+                return {
+                    success: false,
+                    message: 'Invalid user data',
+                };
+            }
+
+            // Update password in database
+            const updatedUser = await this.userRepository.updateUserPassword(user.id, newPassword);
+
+            return {
+                success: true,
+                message: 'Password updated successfully',
+                data: updatedUser,
+            };
+        } catch (error: any) {
+            return {
+                success: false,
+                message: this.getErrorMessage(error),
+            };
+        }
+    }
+
     private validateUserData(userData: CreateUserRequest): UserValidationResult {
         const errors: string[] = [];
 

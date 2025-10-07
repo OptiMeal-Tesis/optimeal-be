@@ -175,10 +175,17 @@ export class PaymentService {
 
     if (status === "approved") {
       // Create order and finalize
+      let orderId: number | null = null;
+      
       await prisma.$transaction(async (tx) => {
-        await this.createOrderFromCheckout(tx, checkout.id);
+        orderId = await this.createOrderFromCheckout(tx, checkout.id);
         await tx.checkout.update({ where: { id: checkout.id }, data: { status: "APPROVED" } });
       });
+
+      // Broadcast AFTER transaction completes (synchronously)
+      if (orderId) {
+        await this.broadcastOrderCreation(orderId);
+      }
     } else if (["rejected", "cancelled", "expired"].includes(status)) {
       await prisma.$transaction(async (tx) => {
         // Release reserved stock
@@ -193,7 +200,7 @@ export class PaymentService {
     }
   }
 
-  private async createOrderFromCheckout(tx: Prisma.TransactionClient, checkoutId: number): Promise<void> {
+  private async createOrderFromCheckout(tx: Prisma.TransactionClient, checkoutId: number): Promise<number> {
     const checkout = await tx.checkout.findUnique({ where: { id: checkoutId }, include: { items: true } });
     if (!checkout) throw new Error("Checkout not found");
 
@@ -217,25 +224,26 @@ export class PaymentService {
       },
     });
 
-    // ✅ Broadcast new order to Supabase Realtime (after transaction commits)
-    // We need to fetch the full order with relations after the transaction
-    setImmediate(async () => {
-      try {
-        const orderService = new OrderService();
-        const fullOrder = await orderService['orderRepository'].findById(order.id);
-        
-        if (fullOrder) {
-          // Broadcast new order event
-          const orderResponse = orderService['mapOrderToResponse'](fullOrder);
-          await broadcastNewOrder(orderResponse);
+    return order.id;
+  }
 
-          // Broadcast shift summary update
-          await this.broadcastShiftSummaryForOrder(fullOrder, orderService);
-        }
-      } catch (error) {
-        console.error('Error broadcasting order from checkout:', error);
+  private async broadcastOrderCreation(orderId: number): Promise<void> {
+    try {
+      const orderService = new OrderService();
+      const fullOrder = await orderService['orderRepository'].findById(orderId);
+      
+      if (fullOrder) {
+        // Broadcast new order event
+        const orderResponse = orderService['mapOrderToResponse'](fullOrder);
+        await broadcastNewOrder(orderResponse);
+
+        // Broadcast shift summary update
+        await this.broadcastShiftSummaryForOrder(fullOrder, orderService);
       }
-    });
+    } catch (error) {
+      console.error('Error broadcasting order from checkout:', error);
+      // Don't throw - this is non-critical for order creation
+    }
   }
 
   private async broadcastShiftSummaryForOrder(order: any, orderService: OrderService): Promise<void> {

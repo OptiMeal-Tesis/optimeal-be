@@ -201,10 +201,14 @@ export class OrderRepository {
         // Create date range for today in Argentina timezone
         const shiftStart = new Date(year, month - 1, day, shiftDetails.startHour, shiftDetails.startMinute, 0, 0);
         const shiftEnd = new Date(year, month - 1, day, shiftDetails.endHour, shiftDetails.endMinute, 0, 0);
+        
+        // Subtract 1 second from end time to avoid overlap between shifts
+        // This ensures 12:30 goes to the next shift (12:30-13:00), not the previous one (12:00-12:30)
+        const shiftEndExclusive = new Date(shiftEnd.getTime() - 1000);
 
         where.pickUpTime = {
           gte: shiftStart,
-          lt: shiftEnd,
+          lt: shiftEndExclusive,
         };
       } else {
         // If shift is not recognized, show all shifts for the day
@@ -504,13 +508,17 @@ export class OrderRepository {
     // Create date range for the shift
     const shiftStart = new Date(year, month - 1, day, startHour, startMinute, 0, 0);
     const shiftEnd = new Date(year, month - 1, day, endHour, endMinute, 0, 0);
+    
+    // Subtract 1 second from end time to avoid overlap between shifts
+    // This ensures 12:30 goes to the next shift (12:30-13:00), not the previous one (12:00-12:30)
+    const shiftEndExclusive = new Date(shiftEnd.getTime() - 1000);
 
     // Get all orders for the shift
     const orders = await this.prisma.order.findMany({
       where: {
         pickUpTime: {
           gte: shiftStart,
-          lte: shiftEnd,
+          lt: shiftEndExclusive,
         },
         status: {
           not: "CANCELLED",

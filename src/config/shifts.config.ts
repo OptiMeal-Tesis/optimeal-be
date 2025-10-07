@@ -78,7 +78,46 @@ class ShiftsConfig {
    * Get shift details by label
    */
   public getShiftByLabel(label: string): Shift | undefined {
-    return this.shifts.find(s => s.label === label);
+    // First try exact match
+    let shift = this.shifts.find(s => s.label === label);
+    
+    if (!shift) {
+      // Try to find by parsing the time components
+      // This handles cases where frontend sends different format than configured
+      const parsedShift = this.parseShiftFromString(label);
+      if (parsedShift) {
+        shift = this.shifts.find(s => 
+          s.startHour === parsedShift.startHour &&
+          s.startMinute === parsedShift.startMinute &&
+          s.endHour === parsedShift.endHour &&
+          s.endMinute === parsedShift.endMinute
+        );
+      }
+    }
+    
+    return shift;
+  }
+
+  /**
+   * Parse shift from string to handle different formats
+   */
+  private parseShiftFromString(shiftStr: string): Shift | null {
+    try {
+      const [start, end] = shiftStr.split('-').map(s => s.trim());
+      
+      const [startHour, startMinute = '0'] = start.split(':');
+      const [endHour, endMinute = '0'] = end.split(':');
+
+      return {
+        label: shiftStr,
+        startHour: parseInt(startHour, 10),
+        startMinute: parseInt(startMinute, 10),
+        endHour: parseInt(endHour, 10),
+        endMinute: parseInt(endMinute, 10),
+      };
+    } catch {
+      return null;
+    }
   }
 
   /**

@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { OrderService } from "../../order/services/order.service.js";
 import { broadcastNewOrder, broadcastShiftSummaryUpdate } from "../../../lib/supabase-realtime.js";
+import { shiftsConfig } from "../../../config/shifts.config.js";
 
 export class PaymentService {
   private client: MercadoPagoConfig;
@@ -250,12 +251,7 @@ export class PaymentService {
     try {
       // Determine which shift the order belongs to
       const pickupHour = new Date(order.pickUpTime).getHours();
-      let shift = 'all';
-      
-      if (pickupHour === 14) shift = '11-12';
-      else if (pickupHour === 15) shift = '12-13';
-      else if (pickupHour === 16) shift = '13-14';
-      else if (pickupHour === 17) shift = '14-15';
+      const shift = shiftsConfig.getShiftFromUTCHour(pickupHour);
       
       // Get shift summary
       const shiftSummary = await orderService.getShiftSummary(shift);

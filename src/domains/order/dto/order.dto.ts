@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { OrderStatus } from '@prisma/client';
+import { shiftsConfig } from '../../../config/shifts.config.js';
 
 export const CreateOrderItemDTO = z.object({
     productId: z.number().int().positive('Product ID must be a positive integer'),
@@ -58,9 +59,9 @@ export const OrderQueryParamsDTO = z.object({
     userName: z.string().optional(),
     shift: z.string().optional().transform((val) => {
         if (!val) return undefined;
-        const validShifts = ['11-12', '12-13', '13-14', '14-15', 'all'];
+        const validShifts = shiftsConfig.getValidShifts();
         if (!validShifts.includes(val)) {
-            throw new Error('Shift must be one of: 11-12, 12-13, 13-14, 14-15, all');
+            throw new Error(`Shift must be one of: ${validShifts.join(', ')}`);
         }
         return val;
     }),
@@ -68,9 +69,9 @@ export const OrderQueryParamsDTO = z.object({
 
 export const ShiftDishesQueryDTO = z.object({
     shift: z.string().transform((val) => {
-        const validShifts = ['11-12', '12-13', '13-14', '14-15', 'all'];
+        const validShifts = shiftsConfig.getValidShifts();
         if (!validShifts.includes(val)) {
-            throw new Error('Shift must be one of: 11-12, 12-13, 13-14, 14-15, all');
+            throw new Error(`Shift must be one of: ${validShifts.join(', ')}`);
         }
         return val;
     }),

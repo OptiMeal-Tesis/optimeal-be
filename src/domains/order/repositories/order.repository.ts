@@ -4,6 +4,7 @@ import {
   UpdateOrderStatusRequest,
 } from "../models/Order.js";
 import { prisma } from "../../../lib/prisma.js";
+import { shiftsConfig } from "../../../config/shifts.config.js";
 
 // Use Prisma types
 type Order = Prisma.OrderGetPayload<{
@@ -194,38 +195,27 @@ export class OrderRepository {
 
     if (shift && shift !== "all") {
       // Filter by specific shift of today
-      let startHour: number, endHour: number;
+      const shiftDetails = shiftsConfig.getShiftByLabel(shift);
+      
+      if (shiftDetails) {
+        // Create date range for today in Argentina timezone
+        const shiftStart = new Date(year, month - 1, day, shiftDetails.startHour, shiftDetails.startMinute, 0, 0);
+        const shiftEnd = new Date(year, month - 1, day, shiftDetails.endHour, shiftDetails.endMinute, 0, 0);
 
-      switch (shift) {
-        case "11-12":
-          startHour = 11;
-          endHour = 12;
-          break;
-        case "12-13":
-          startHour = 12;
-          endHour = 13;
-          break;
-        case "13-14":
-          startHour = 13;
-          endHour = 14;
-          break;
-        case "14-15":
-          startHour = 14;
-          endHour = 15;
-          break;
-        default:
-          startHour = 0;
-          endHour = 23;
+        where.pickUpTime = {
+          gte: shiftStart,
+          lt: shiftEnd,
+        };
+      } else {
+        // If shift is not recognized, show all shifts for the day
+        const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+        const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+
+        where.pickUpTime = {
+          gte: startOfDay,
+          lte: endOfDay,
+        };
       }
-
-      // Create date range for today in Argentina timezone
-      const shiftStart = new Date(year, month - 1, day, startHour, 0, 0, 0);
-      const shiftEnd = new Date(year, month - 1, day, endHour, 0, 0, 0);
-
-      where.pickUpTime = {
-        gte: shiftStart,
-        lt: shiftEnd,
-      };
     } else {
       // Default and shift=all: show only today's orders (all shifts)
       const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
@@ -485,43 +475,35 @@ export class OrderRepository {
     // Get date components (YYYY-MM-DD format)
     const [year, month, day] = targetDate.split("-").map(Number);
 
-    let startHour: number, endHour: number;
+    let startHour: number, startMinute: number, endHour: number, endMinute: number;
 
     if (shift === "all") {
       // For 'all' shift, get all orders for the day
       startHour = 0;
+      startMinute = 0;
       endHour = 23;
+      endMinute = 59;
     } else {
-      // Map shift strings to hour ranges
-      switch (shift) {
-        case "11-12":
-          startHour = 11;
-          endHour = 12;
-          break;
-        case "12-13":
-          startHour = 12;
-          endHour = 13;
-          break;
-        case "13-14":
-          startHour = 13;
-          endHour = 14;
-          break;
-        case "14-15":
-          startHour = 14;
-          endHour = 15;
-          break;
-        default:
-          // If shift is not recognized, return empty results
-          return {
-            mainDishes: [],
-            sides: [],
-          };
+      // Map shift strings to hour ranges using dynamic configuration
+      const shiftDetails = shiftsConfig.getShiftByLabel(shift);
+      
+      if (!shiftDetails) {
+        // If shift is not recognized, return empty results
+        return {
+          mainDishes: [],
+          sides: [],
+        };
       }
+      
+      startHour = shiftDetails.startHour;
+      startMinute = shiftDetails.startMinute;
+      endHour = shiftDetails.endHour;
+      endMinute = shiftDetails.endMinute;
     }
 
     // Create date range for the shift
-    const shiftStart = new Date(year, month - 1, day, startHour, 0, 0, 0);
-    const shiftEnd = new Date(year, month - 1, day, endHour, 0, 0, 0);
+    const shiftStart = new Date(year, month - 1, day, startHour, startMinute, 0, 0);
+    const shiftEnd = new Date(year, month - 1, day, endHour, endMinute, 0, 0);
 
     // Get all orders for the shift
     const orders = await this.prisma.order.findMany({

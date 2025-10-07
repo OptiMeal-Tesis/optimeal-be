@@ -99,6 +99,54 @@ orderRouter.get(
   }
 );
 
+// GET /api/orders/shifts - Get all available shifts (AUTHENTICATED USERS)
+orderRouter.get(
+  "/shifts",
+  authenticateToken,
+  requireAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const result = await service.getAvailableShifts();
+
+      if (result.success) {
+        return res.status(HttpStatus.OK).json(result);
+      } else {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(result);
+      }
+    } catch (error: any) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+);
+
+// GET /api/orders/shift/summary - Get dishes summary by shift (ADMIN ONLY)
+orderRouter.get(
+  "/shift/summary",
+  authenticateToken,
+  requireAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const { shift } = req.query;
+      const shiftParam = (shift as string) || "all";
+      const result = await service.getShiftSummary(shiftParam);
+
+      if (result.success) {
+        return res.status(HttpStatus.OK).json(result);
+      } else {
+        return res.status(HttpStatus.BAD_REQUEST).json(result);
+      }
+    } catch (error: any) {
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  }
+);
+
 // GET /api/orders/:id - Get order by ID (AUTHENTICATED USERS)
 orderRouter.get(
   "/:id",
@@ -144,31 +192,6 @@ orderRouter.put(
       return res.status(HttpStatus.OK).json(result);
     } else {
       return res.status(HttpStatus.BAD_REQUEST).json(result);
-    }
-  }
-);
-
-// GET /api/orders/shift/summary - Get dishes summary by shift (ADMIN ONLY)
-orderRouter.get(
-  "/shift/summary",
-  authenticateToken,
-  requireAdmin,
-  async (req: Request, res: Response) => {
-    try {
-      const { shift } = req.query;
-      const shiftParam = (shift as string) || "all";
-      const result = await service.getShiftSummary(shiftParam);
-
-      if (result.success) {
-        return res.status(HttpStatus.OK).json(result);
-      } else {
-        return res.status(HttpStatus.BAD_REQUEST).json(result);
-      }
-    } catch (error: any) {
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-        success: false,
-        message: "Internal server error",
-      });
     }
   }
 );

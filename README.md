@@ -25,6 +25,12 @@ Backend API for Optimeal application built with Node.js, Express, TypeScript, Pr
    
    # Database Configuration (already configured in docker-compose.yml)
    DATABASE_URL=postgresql://postgres:password@localhost:5432/optimeal?schema=public
+   
+   # Delivery Shifts Configuration (Optional)
+   # Define available delivery shifts as a comma-separated list of time ranges
+   # Format: HH-HH:MM or HH:MM-HH or HH:MM-HH:MM
+   # Default (if not set): 11-11:30,11:30-12,12-12:30,12:30-13,13-13:30,13:30-14,14-14:30,14:30-15
+   DELIVERY_SHIFTS=11-11:30,11:30-12,12-12:30,12:30-13,13-13:30,13:30-14,14-14:30,14:30-15
    ```
 
 ### 🐳 Run with Docker

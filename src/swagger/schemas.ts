@@ -497,8 +497,8 @@ export const swaggerSchemas = {
                 properties: {
                     shift: {
                         type: 'string',
-                        example: '12-13',
-                        description: 'Turno consultado'
+                        example: '12-12:30',
+                        description: 'Turno consultado (configurable via variables de entorno)'
                     },
                     mainDishes: {
                         type: 'array',

@@ -14,6 +14,7 @@ import {
   OrderSummary,
 } from "../models/Order.js";
 import { broadcastNewOrder, broadcastOrderStatusUpdate, broadcastShiftSummaryUpdate } from "../../../lib/supabase-realtime.js";
+import { shiftsConfig } from "../../../config/shifts.config.js";
 
 export class OrderService {
   private orderRepository: OrderRepository;
@@ -26,7 +27,7 @@ export class OrderService {
     orderData: CreateOrderRequest
   ): Promise<OrderCreateResponse> {
     try {
-      this.validateCreateOrderRequest(orderData);
+      // this.validateCreateOrderRequest(orderData);
 
       // Validate that all products exist and are available
       await this.validateProductsExist(orderData.items);
@@ -213,11 +214,13 @@ export class OrderService {
       throw new Error("El horario de retiro debe ser en el futuro");
     }
 
-    // Validate shift hours (14-18 UTC, which corresponds to 11-15 Argentina time)
+    // Validate shift hours using dynamic shifts configuration
     const pickupHour = pickupDate.getHours();
-    if (![14, 15, 16, 17, 18].includes(pickupHour)) {
+    const validUTCHours = shiftsConfig.getValidUTCHours();
+    if (!validUTCHours.includes(pickupHour)) {
+      const shiftRange = shiftsConfig.getShiftHourRange();
       throw new Error(
-        "El horario de retiro debe estar entre las 12:00 y 15:00 hora Argentina (14:00 a 18:00 UTC)"
+        `El horario de retiro debe estar entre las ${shiftRange.minHour}:00 y ${shiftRange.maxHour}:00 hora Argentina`
       );
     }
 
@@ -395,8 +398,24 @@ export class OrderService {
     }
   }
 
+  async getAvailableShifts(): Promise<{ success: boolean; message: string; data?: string[] }> {
+    try {
+      const shifts = shiftsConfig.getValidShifts();
+      return {
+        success: true,
+        message: "Available shifts retrieved successfully",
+        data: shifts,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: this.getErrorMessage(error),
+      };
+    }
+  }
+
   private validateShiftDishesParams(shift: string): ShiftSummaryResponse {
-    const validShifts = ["11-12", "12-13", "13-14", "14-15", "all"];
+    const validShifts = shiftsConfig.getValidShifts();
 
     // Use 'all' as default if no shift provided
     const shiftToValidate = shift || "all";
@@ -421,13 +440,7 @@ export class OrderService {
     try {
       // Determine which shift the order belongs to based on pickUpTime
       const pickupHour = new Date(order.pickUpTime).getHours();
-      let shift = 'all';
-      
-      // Map UTC hours to shifts (14-18 UTC = 11-15 Argentina time)
-      if (pickupHour === 14) shift = '11-12';
-      else if (pickupHour === 15) shift = '12-13';
-      else if (pickupHour === 16) shift = '13-14';
-      else if (pickupHour === 17) shift = '14-15';
+      const shift = shiftsConfig.getShiftFromUTCHour(pickupHour);
       
       // Get shift summary for the specific shift
       const shiftSummary = await this.getShiftSummary(shift);

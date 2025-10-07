@@ -4,6 +4,7 @@ import { CheckoutRequest } from "../dto/payment.dto.js";
 import { Prisma } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { OrderService } from "../../order/services/order.service.js";
+import { broadcastNewOrder, broadcastShiftSummaryUpdate } from "../../../lib/supabase-realtime.js";
 
 export class PaymentService {
   private client: MercadoPagoConfig;
@@ -215,6 +216,53 @@ export class PaymentService {
         },
       },
     });
+
+    // ✅ Broadcast new order to Supabase Realtime (after transaction commits)
+    // We need to fetch the full order with relations after the transaction
+    setImmediate(async () => {
+      try {
+        const orderService = new OrderService();
+        const fullOrder = await orderService['orderRepository'].findById(order.id);
+        
+        if (fullOrder) {
+          // Broadcast new order event
+          const orderResponse = orderService['mapOrderToResponse'](fullOrder);
+          await broadcastNewOrder(orderResponse);
+
+          // Broadcast shift summary update
+          await this.broadcastShiftSummaryForOrder(fullOrder, orderService);
+        }
+      } catch (error) {
+        console.error('Error broadcasting order from checkout:', error);
+      }
+    });
+  }
+
+  private async broadcastShiftSummaryForOrder(order: any, orderService: OrderService): Promise<void> {
+    try {
+      // Determine which shift the order belongs to
+      const pickupHour = new Date(order.pickUpTime).getHours();
+      let shift = 'all';
+      
+      if (pickupHour === 14) shift = '11-12';
+      else if (pickupHour === 15) shift = '12-13';
+      else if (pickupHour === 16) shift = '13-14';
+      else if (pickupHour === 17) shift = '14-15';
+      
+      // Get shift summary
+      const shiftSummary = await orderService.getShiftSummary(shift);
+      if (shiftSummary.success && shiftSummary.data) {
+        await broadcastShiftSummaryUpdate(shiftSummary.data);
+      }
+
+      // Also broadcast 'all' shifts
+      const allShiftsSummary = await orderService.getShiftSummary('all');
+      if (allShiftsSummary.success && allShiftsSummary.data) {
+        await broadcastShiftSummaryUpdate(allShiftsSummary.data);
+      }
+    } catch (error) {
+      console.error('Error broadcasting shift summary:', error);
+    }
   }
 }
 

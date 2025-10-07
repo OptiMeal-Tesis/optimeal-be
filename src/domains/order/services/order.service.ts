@@ -13,6 +13,7 @@ import {
   ShiftSummaryResponse,
   OrderSummary,
 } from "../models/Order.js";
+import { broadcastNewOrder, broadcastOrderStatusUpdate, broadcastShiftSummaryUpdate } from "../../../lib/supabase-realtime.js";
 
 export class OrderService {
   private orderRepository: OrderRepository;
@@ -37,6 +38,17 @@ export class OrderService {
       await this.validateProductSideCompatibility(orderData.items);
 
       const order = await this.orderRepository.create(orderData);
+
+      // Get full order details for broadcast
+      const fullOrder = await this.orderRepository.findById(order.id);
+      
+      if (fullOrder) {
+        // Broadcast new order to Supabase Realtime
+        await broadcastNewOrder(this.mapOrderToResponse(fullOrder));
+
+        // Broadcast updated shift summary (since new order affects the shift)
+        await this.broadcastShiftSummaryForOrder(fullOrder);
+      }
 
       return {
         success: true,
@@ -146,6 +158,16 @@ export class OrderService {
       this.validateStatusTransition(existingOrder.status, status);
 
       const updatedOrder = await this.orderRepository.updateStatus(id, status);
+
+      // Broadcast status update to Supabase Realtime
+      await broadcastOrderStatusUpdate(
+        this.mapOrderToResponse(updatedOrder),
+        existingOrder.status,
+        status
+      );
+
+      // Broadcast updated shift summary (since status change affects shift quantities)
+      await this.broadcastShiftSummaryForOrder(updatedOrder);
 
       return {
         success: true,
@@ -390,6 +412,39 @@ export class OrderService {
       success: true,
       message: "Parameters are valid",
     };
+  }
+
+  /**
+   * Helper method to broadcast shift summary update when an order changes
+   */
+  private async broadcastShiftSummaryForOrder(order: any): Promise<void> {
+    try {
+      // Determine which shift the order belongs to based on pickUpTime
+      const pickupHour = new Date(order.pickUpTime).getHours();
+      let shift = 'all';
+      
+      // Map UTC hours to shifts (14-18 UTC = 11-15 Argentina time)
+      if (pickupHour === 14) shift = '11-12';
+      else if (pickupHour === 15) shift = '12-13';
+      else if (pickupHour === 16) shift = '13-14';
+      else if (pickupHour === 17) shift = '14-15';
+      
+      // Get shift summary for the specific shift
+      const shiftSummary = await this.getShiftSummary(shift);
+      
+      if (shiftSummary.success && shiftSummary.data) {
+        await broadcastShiftSummaryUpdate(shiftSummary.data);
+      }
+
+      // Also broadcast summary for 'all' shifts
+      const allShiftsSummary = await this.getShiftSummary('all');
+      if (allShiftsSummary.success && allShiftsSummary.data) {
+        await broadcastShiftSummaryUpdate(allShiftsSummary.data);
+      }
+    } catch (error) {
+      console.error('Error broadcasting shift summary:', error);
+      // Don't throw - this is a non-critical operation
+    }
   }
 
   private getErrorMessage(error: any): string {

@@ -283,15 +283,11 @@ export class OrderService {
     currentStatus: OrderStatus,
     newStatus: OrderStatus
   ): void {
-    const validTransitions: Record<OrderStatus, OrderStatus[]> = {
-      [OrderStatus.PENDING]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
-      [OrderStatus.PREPARING]: [OrderStatus.READY, OrderStatus.CANCELLED],
-      [OrderStatus.READY]: [OrderStatus.DELIVERED],
-      [OrderStatus.DELIVERED]: [],
-      [OrderStatus.CANCELLED]: [],
-    };
+    const isForbiddenCancellation =
+      newStatus === OrderStatus.CANCELLED &&
+      (currentStatus === OrderStatus.READY || currentStatus === OrderStatus.DELIVERED);
 
-    if (!validTransitions[currentStatus].includes(newStatus)) {
+    if (isForbiddenCancellation) {
       throw new Error(
         `No puede pasar de estado ${currentStatus} a ${newStatus}`
       );

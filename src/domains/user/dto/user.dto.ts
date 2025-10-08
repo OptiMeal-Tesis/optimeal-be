@@ -20,7 +20,8 @@ export const UpdateUserInputDTO = z.object({
 
 // Get user by ID DTO validation schema
 export const GetUserByIdInputDTO = z.object({
-    id: z.number().int().positive('User ID must be a positive integer'),
+    // id: z.number().int().positive('User ID must be a positive integer'),
+    id: z.string().regex(/^\d+$/, 'ID must be a number').transform(Number)
 });
 
 // Get user by email DTO validation schema

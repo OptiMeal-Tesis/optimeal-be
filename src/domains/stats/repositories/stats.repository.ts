@@ -1,6 +1,7 @@
 import { PrismaClient, Prisma, OrderStatus } from "@prisma/client";
 import { prisma } from "../../../lib/prisma.js";
 import { StatsQueryParams, OrderStats, StatsSummary } from "../models/Stats.js";
+import { shiftsConfig } from "../../../config/shifts.config.js";
 
 export class StatsRepository {
   private prisma: PrismaClient;
@@ -81,8 +82,10 @@ export class StatsRepository {
     // Calculate summary statistics
     const summary = this.calculateSummary(orders);
 
+    const mappedOrders = orders.map(order => this.mapOrderToStats(order));
+
     return {
-      orders,
+      orders: mappedOrders,
       summary,
       total: orders.length,
     };
@@ -211,8 +214,11 @@ export class StatsRepository {
     const summary = this.calculateSummary(allOrders);
     const totalPages = Math.ceil(total / limit);
 
+    // Map orders to include shift instead of pickUpTime
+    const mappedOrders = orders.map(order => this.mapOrderToStats(order));
+
     return {
-      orders,
+      orders: mappedOrders,
       summary,
       total,
       totalPages,
@@ -239,6 +245,45 @@ export class StatsRepository {
       totalOrders,
       cancelledOrders,
       deliveredOrders,
+    };
+  }
+
+  private mapOrderToStats(order: any): OrderStats {
+    return {
+      id: order.id,
+      userId: order.userId,
+      user: {
+        id: order.user.id,
+        name: order.user.name,
+        email: order.user.email,
+        national_id: order.user.national_id,
+      },
+      status: order.status,
+      totalPrice: order.totalPrice,
+      shift: shiftsConfig.pickUpTimeToShift(order.pickUpTime) || "",
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      orderItems: order.orderItems.map((item: any) => ({
+        id: item.id,
+        productId: item.productId,
+        product: {
+          id: item.product.id,
+          name: item.product.name,
+          price: item.product.price,
+          photo: item.product.photo,
+        },
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        notes: item.notes,
+        orderItemSide: item.orderItemSide?.side
+          ? {
+              side: {
+                id: item.orderItemSide.side.id,
+                name: item.orderItemSide.side.name,
+              },
+            }
+          : null,
+      })),
     };
   }
 

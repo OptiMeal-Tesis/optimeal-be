@@ -17,7 +17,7 @@ export interface OrderStats {
   };
   status: OrderStatus;
   totalPrice: number;
-  pickUpTime: Date;
+  shift: string;
   createdAt: Date;
   updatedAt: Date;
   orderItems: {

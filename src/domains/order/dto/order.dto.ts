@@ -59,21 +59,24 @@ export const OrderQueryParamsDTO = z.object({
     userName: z.string().optional(),
     shift: z.string().optional().transform((val) => {
         if (!val) return undefined;
-        const validShifts = shiftsConfig.getValidShifts();
-        if (!validShifts.includes(val)) {
-            throw new Error(`Shift must be one of: ${validShifts.join(', ')}`);
+        const resolved = shiftsConfig.getShiftByLabel(val);
+        if (!resolved) {
+            const valid = shiftsConfig.getValidShifts().join(', ');
+            throw new Error(`Shift must be one of: ${valid}`);
         }
-        return val;
+        // Normalize to the configured label so downstream uses consistent value
+        return resolved.label;
     }),
 });
 
 export const ShiftDishesQueryDTO = z.object({
     shift: z.string().transform((val) => {
-        const validShifts = shiftsConfig.getValidShifts();
-        if (!validShifts.includes(val)) {
-            throw new Error(`Shift must be one of: ${validShifts.join(', ')}`);
+        const resolved = shiftsConfig.getShiftByLabel(val);
+        if (!resolved) {
+            const valid = shiftsConfig.getValidShifts().join(', ');
+            throw new Error(`Shift must be one of: ${valid}`);
         }
-        return val;
+        return resolved.label;
     }),
     date: z.string().optional().transform((val) => {
         if (!val) return new Date().toISOString().split('T')[0]; // Default to today

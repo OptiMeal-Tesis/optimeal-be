@@ -306,7 +306,7 @@ export class OrderService {
       },
       status: order.status,
       totalPrice: order.totalPrice,
-      pickUpTime: order.pickUpTime,
+      shift: shiftsConfig.pickUpTimeToShift(order.pickUpTime) || "",
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
       orderItems: order.orderItems.map((item: any) =>

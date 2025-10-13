@@ -167,6 +167,63 @@ class ShiftsConfig {
     
     return utcHours;
   }
+
+  /**
+   * Convert shift to pickUpTime (ISO datetime string)
+   * Uses the start time of the shift and today's date
+   */
+  public shiftToPickUpTime(shift: string): string | null {
+    const shiftDetails = this.getShiftByLabel(shift);
+    
+    if (!shiftDetails) {
+      return null;
+    }
+
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    
+    // Create pickup time at the start of the shift
+    const hour = String(shiftDetails.startHour).padStart(2, '0');
+    const minute = String(shiftDetails.startMinute).padStart(2, '0');
+    
+    return `${today}T${hour}:${minute}:00`;
+  }
+
+  /**
+   * Validate if a shift is valid
+   */
+  public isValidShift(shift: string): boolean {
+    return this.getValidShifts().includes(shift);
+  }
+
+  /**
+   * Convert pickUpTime to shift label
+   * Finds which shift contains the given time
+   */
+  public pickUpTimeToShift(pickUpTime: Date | string): string | null {
+    const date = typeof pickUpTime === 'string' ? new Date(pickUpTime) : pickUpTime;
+    
+    const hour = date.getHours();
+    const minute = date.getMinutes();
+    
+    // Find the shift that contains this time
+    const shift = this.shifts.find(s => {
+      // Check if the time is within this shift's range
+      if (s.startHour < hour && hour < s.endHour) {
+        return true;
+      }
+      if (s.startHour === hour && s.startMinute <= minute) {
+        if (s.endHour > hour) return true;
+        if (s.endHour === hour && s.endMinute > minute) return true;
+      }
+      if (s.endHour === hour && minute < s.endMinute) {
+        return true;
+      }
+      return false;
+    });
+
+    return shift ? shift.label : null;
+  }
 }
 
 // Singleton instance

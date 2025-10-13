@@ -1,6 +1,6 @@
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { prisma } from "../../../lib/prisma.js";
-import { CheckoutRequest } from "../dto/payment.dto.js";
+import { CheckoutRequest, CheckoutRequestWithPickUpTime } from "../dto/payment.dto.js";
 import { Prisma } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { OrderService } from "../../order/services/order.service.js";
@@ -20,21 +20,34 @@ export class PaymentService {
   }
 
   async createCheckout(request: CheckoutRequest): Promise<{ success: boolean; message: string; data?: { checkoutId: number; initPoint: string; preferenceId: string } }> {
+    // Convert shift to pickUpTime
+    const pickUpTime = shiftsConfig.shiftToPickUpTime(request.shift);
+    
+    if (!pickUpTime) {
+      return { success: false, message: `Invalid shift: ${request.shift}` };
+    }
+
+    // Create request with pickUpTime instead of shift
+    const requestWithPickUpTime: CheckoutRequestWithPickUpTime = {
+      ...request,
+      pickUpTime,
+    };
+
     // Reuse validations from OrderService
     const orderService = new OrderService();
 
     // This line is commented becase we want to create orders whenever we want to test.
-    // orderService["validateCreateOrderRequest"](request as any);
+    // orderService["validateCreateOrderRequest"](requestWithPickUpTime as any);
     
-    await orderService["validateProductsExist"](request.items as any);
-    await orderService["validateSidesExist"](request.items as any);
-    await orderService["validateProductSideCompatibility"](request.items as any);
+    await orderService["validateProductsExist"](requestWithPickUpTime.items as any);
+    await orderService["validateSidesExist"](requestWithPickUpTime.items as any);
+    await orderService["validateProductSideCompatibility"](requestWithPickUpTime.items as any);
 
     try {
       const result = await prisma.$transaction(async (tx) => {
         // Calculate total price same as order repo
         let total = 0;
-        for (const item of request.items) {
+        for (const item of requestWithPickUpTime.items) {
           const product = await tx.product.findFirst({
             where: { id: item.productId, deletedAt: null },
           });
@@ -48,7 +61,7 @@ export class PaymentService {
         }
 
         // Reserve stock atomically by decrementing now
-        for (const item of request.items) {
+        for (const item of requestWithPickUpTime.items) {
           const updated = await tx.product.updateMany({
             where: { id: item.productId, stock: { gte: item.quantity } },
             data: { stock: { decrement: item.quantity } },
@@ -62,13 +75,13 @@ export class PaymentService {
         const externalReference = randomUUID();
         const checkout = await tx.checkout.create({
           data: {
-            userId: request.userId,
+            userId: requestWithPickUpTime.userId,
             status: "PENDING",
             totalPrice: total,
-            pickUpTime: new Date(request.pickUpTime),
+            pickUpTime: new Date(requestWithPickUpTime.pickUpTime),
             externalReference,
             items: {
-              create: request.items.map((i) => ({
+              create: requestWithPickUpTime.items.map((i) => ({
                 productId: i.productId,
                 quantity: i.quantity,
                 unitPrice: 0,
@@ -83,7 +96,7 @@ export class PaymentService {
         const preference: any = {
           external_reference: checkout.externalReference,
           items: await Promise.all(
-            request.items.map(async (i) => {
+            requestWithPickUpTime.items.map(async (i) => {
               const product = await tx.product.findUnique({ where: { id: i.productId } });
               return {
                 id: String(i.productId),
@@ -109,7 +122,7 @@ export class PaymentService {
           prefResponse = await this.preference.create({ body: preference });
         } catch (e) {
           // If MP fails, release reserved stock and rethrow
-          for (const item of request.items) {
+          for (const item of requestWithPickUpTime.items) {
             await tx.product.update({
               where: { id: item.productId },
               data: { stock: { increment: item.quantity } },

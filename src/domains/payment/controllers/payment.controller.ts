@@ -22,7 +22,7 @@ paymentRouter.post(
       const result = await service.createCheckout({
         userId,
         items: req.body.items,
-        pickUpTime: req.body.pickUpTime,
+        shift: req.body.shift,
       });
       if (!result.success) {
         return res.status(HttpStatus.BAD_REQUEST).json(result);

@@ -31,6 +31,13 @@ Backend API for Optimeal application built with Node.js, Express, TypeScript, Pr
    # Format: HH-HH:MM or HH:MM-HH or HH:MM-HH:MM
    # Default (if not set): 11-11:30,11:30-12,12-12:30,12:30-13,13-13:30,13:30-14,14-14:30,14:30-15
    DELIVERY_SHIFTS=11-11:30,11:30-12,12-12:30,12:30-13,13-13:30,13:30-14,14-14:30,14:30-15
+   
+   # Email Configuration (for order status notifications)
+   EMAIL_HOST=smtp.gmail.com
+   EMAIL_PORT=587
+   EMAIL_USER=your_gmail_address@gmail.com
+   EMAIL_PASSWORD=your_app_password_here
+   APP_LOGO_URL=https://your-bucket.s3.region.amazonaws.com/logo.png
    ```
 
 ### 🐳 Run with Docker

@@ -19,6 +19,11 @@ services:
       - MP_BACK_URL_SUCCESS=${MP_BACK_URL_SUCCESS}
       - MP_BACK_URL_FAILURE=${MP_BACK_URL_FAILURE}
       - MP_BACK_URL_PENDING=${MP_BACK_URL_PENDING}
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_PORT=${EMAIL_PORT}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - APP_LOGO_URL=${APP_LOGO_URL}
     depends_on:
       optimeal-db:
         condition: service_healthy

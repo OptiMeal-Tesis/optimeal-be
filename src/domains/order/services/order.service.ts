@@ -15,6 +15,7 @@ import {
 } from "../models/Order.js";
 import { broadcastNewOrder, broadcastOrderStatusUpdate, broadcastShiftSummaryUpdate } from "../../../lib/supabase-realtime.js";
 import { shiftsConfig } from "../../../config/shifts.config.js";
+import { EmailService } from "../../../lib/email.js";
 
 export class OrderService {
   private orderRepository: OrderRepository;
@@ -159,6 +160,23 @@ export class OrderService {
       this.validateStatusTransition(existingOrder.status, status);
 
       const updatedOrder = await this.orderRepository.updateStatus(id, status);
+
+      // Send email notification for READY and CANCELLED status
+      if (status === OrderStatus.READY || status === OrderStatus.CANCELLED) {
+        try {
+          const logoUrl = process.env.APP_LOGO_URL;
+          await EmailService.sendOrderStatusEmail(
+            existingOrder.user.email,
+            id,
+            status,
+            logoUrl,
+            existingOrder.user.name || undefined
+          );
+        } catch (emailError) {
+          console.error('Error sending email notification:', emailError);
+          // Don't throw - email failure shouldn't break the order update
+        }
+      }
 
       // Broadcast status update to Supabase Realtime
       await broadcastOrderStatusUpdate(

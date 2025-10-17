@@ -172,7 +172,16 @@ export class AuthService {
 
         // Validate allowed email domain
         if (!this.isValidEmailDomain(request.email)) {
-            throw new Error('Solo se permiten correos del dominio @mail.austral.edu.ar');
+            const allowedDomains = this.getAllowedDomains();
+            const bullets = (allowedDomains.length > 0 ? allowedDomains : (process.env.ALLOWED_EMAIL_DOMAIN || '').split(',').map(s => s.trim()).filter(Boolean))
+                .map((d) => `• ${d}`)
+                .join('\n');
+            const envMap = {
+                ALLOWED_EMAIL_DOMAIN: (process.env.ALLOWED_EMAIL_DOMAIN || null) as any,
+            } as const;
+            const err: any = new Error(`Solo se permiten correos de los siguientes dominios:\n${bullets}`);
+            err.env = envMap;
+            throw err;
         }
 
         if (request.password.length < 8) {
@@ -218,8 +227,18 @@ export class AuthService {
     }
 
     private isValidEmailDomain(email: string): boolean {
-        const allowedDomain = process.env.ALLOWED_EMAIL_DOMAIN!;
-        return email.toLowerCase().endsWith(allowedDomain);
+        const emailLc = email.toLowerCase();
+        const domains = this.getAllowedDomains();
+        if (domains.length === 0) return false;
+        return domains.some((d) => emailLc.endsWith(d));
+    }
+
+    private getAllowedDomains(): string[] {
+        const raw = process.env.ALLOWED_EMAIL_DOMAIN || '';
+        return raw
+            .split(',')
+            .map((s) => s.toLowerCase().trim())
+            .filter((s) => s.length > 0);
     }
 
     private isValidNationalId(nationalId: string): boolean {

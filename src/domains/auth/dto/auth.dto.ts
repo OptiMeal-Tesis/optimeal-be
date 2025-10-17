@@ -6,8 +6,21 @@ export const SignupInputDTO = z.object({
     email: z.string()
         .email('Formato de email inválido')
         .refine(
-            (email) => email.toLowerCase().endsWith('@mail.austral.edu.ar'),
-            { message: 'Solo se permiten correos del dominio @mail.austral.edu.ar' }
+            (email) => {
+                const raw = process.env.ALLOWED_EMAIL_DOMAIN || '';
+                const domains = raw
+                    .split(',')
+                    .map((s) => s.toLowerCase().trim())
+                    .filter((s) => s.length > 0);
+                const emailLc = email.toLowerCase();
+                return domains.length > 0 && domains.some((d) => emailLc.endsWith(d));
+            },
+            { message: (() => {
+                const raw = process.env.ALLOWED_EMAIL_DOMAIN || '';
+                const domains = raw.split(',').map(s => s.trim()).filter(Boolean);
+                const bullets = domains.map(d => `• ${d}`).join('\n');
+                return `Solo se permiten correos de los siguientes dominios:\n${bullets}`;
+            })() }
         ),
     password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
     name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').optional(),

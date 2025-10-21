@@ -13,6 +13,7 @@ export class UserRepository {
             data: {
                 email: userData.email,
                 name: userData.name,
+                lastName: userData.lastName,
                 national_id: userData.national_id,
                 password: userData.password,
                 role: userData.role || UserTypeEnum.USER,

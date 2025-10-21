@@ -4,6 +4,7 @@ export interface User {
     id?: number;
     email: string;
     name?: string | null;
+    lastName?: string | null;
     national_id: string;
     password: string;
     role: UserTypeEnum;
@@ -17,6 +18,7 @@ export interface CreateUserRequest {
     email: string;
     password: string;
     name?: string;
+    lastName?: string;
     national_id: string;
     role?: UserTypeEnum;
     cognito_sub?: string;
@@ -24,6 +26,7 @@ export interface CreateUserRequest {
 
 export interface UpdateUserRequest {
     name?: string;
+    lastName?: string;
     national_id?: string;
     role?: UserTypeEnum;
 }

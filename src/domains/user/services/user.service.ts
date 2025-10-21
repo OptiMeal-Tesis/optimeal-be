@@ -315,6 +315,10 @@ export class UserService {
             errors.push('El nombre debe tener al menos 2 caracteres');
         }
 
+        if (userData.lastName && userData.lastName.trim().length < 2) {
+            errors.push('El apellido debe tener al menos 2 caracteres');
+        }
+
         if (userData.national_id && !this.isValidNationalId(userData.national_id)) {
             errors.push('Formato de DNI inválido. Sin puntos ni espacios.');
         }
@@ -330,6 +334,10 @@ export class UserService {
 
         if (userData.name && userData.name.trim().length < 2) {
             errors.push('El nombre debe tener al menos 2 caracteres');
+        }
+
+        if (userData.lastName && userData.lastName.trim().length < 2) {
+            errors.push('El apellido debe tener al menos 2 caracteres');
         }
 
         if (userData.national_id && !this.isValidNationalId(userData.national_id)) {

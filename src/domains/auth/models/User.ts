@@ -4,6 +4,7 @@ export interface SignUpRequest {
     email: string;
     password: string;
     name?: string;
+    lastName?: string;
     national_id: string;
     role?: UserTypeEnum;
 }

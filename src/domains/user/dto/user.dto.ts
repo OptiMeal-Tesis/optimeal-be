@@ -6,7 +6,7 @@ export const CreateUserInputDTO = z.object({
     email: z.string().email('Formato de email inválido'),
     password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
     name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').optional(),
-    last_name: z.string().min(2, 'El apellido debe tener al menos 2 caracteres').optional(),
+    lastName: z.string().min(2, 'El apellido debe tener al menos 2 caracteres').optional(),
     national_id: z.string().regex(/^\d{7,10}$/, 'El DNI debe tener entre 7 y 10 dígitos'),
     role: z.nativeEnum(UserTypeEnum).optional().default(UserTypeEnum.USER),
     cognito_sub: z.string().optional(),
@@ -15,7 +15,7 @@ export const CreateUserInputDTO = z.object({
 // Update user DTO validation schema
 export const UpdateUserInputDTO = z.object({
     name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').optional(),
-    last_name: z.string().min(2, 'El apellido debe tener al menos 2 caracteres').optional(),
+    lastName: z.string().min(2, 'El apellido debe tener al menos 2 caracteres').optional(),
     // national_id: z.string().regex(/^\d{7,10}$/, 'El DNI debe tener entre 7 y 10 dígitos').optional(),
     role: z.nativeEnum(UserTypeEnum).optional(),
 });

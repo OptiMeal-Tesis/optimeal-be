@@ -51,6 +51,7 @@ export class AuthService {
                 const createUserRequest: CreateUserRequest = {
                     email: signUpRequest.email,
                     name: signUpRequest.name,
+                    lastName: signUpRequest.lastName,
                     national_id: signUpRequest.national_id,
                     password: signUpRequest.password, // Encrypt in production
                     role: signUpRequest.role || UserTypeEnum.USER,
@@ -190,6 +191,10 @@ export class AuthService {
 
         if (request.name && request.name.trim().length < 2) {
             throw new Error('El nombre debe tener al menos 2 caracteres');
+        }
+
+        if (request.lastName && request.lastName.trim().length < 2) {
+            throw new Error('El apellido debe tener al menos 2 caracteres');
         }
 
         if (!this.isValidNationalId(request.national_id)) {

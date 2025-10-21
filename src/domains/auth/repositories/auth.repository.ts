@@ -57,6 +57,13 @@ export class AuthRepository {
             });
         }
 
+        if (signUpRequest.lastName) {
+            userAttributes.push({
+                Name: 'family_name',
+                Value: signUpRequest.lastName,
+            });
+        }
+
         const command = new SignUpCommand({
             ClientId: this.clientId,
             Username: signUpRequest.email,

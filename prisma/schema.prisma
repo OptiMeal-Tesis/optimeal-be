@@ -44,6 +44,7 @@ model User {
   id          Int          @id @default(autoincrement())
   email       String       @unique
   name        String?
+  lastName    String?
   national_id String       @unique
   password    String
   role        UserTypeEnum @default(USER)

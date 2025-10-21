@@ -29,8 +29,13 @@ export class UserRepository {
     }
 
     async getUserByEmail(email: string): Promise<User | null> {
-        return await this.prisma.user.findUnique({
-            where: { email },
+        return await this.prisma.user.findFirst({
+            where: { 
+                email: {
+                    equals: email,
+                    mode: 'insensitive'
+                }
+            },
         });
     }
 
@@ -50,14 +55,19 @@ export class UserRepository {
         const existingUser = await this.prisma.user.findFirst({
             where: {
                 OR: [
-                    { email },
+                    { 
+                        email: {
+                            equals: email,
+                            mode: 'insensitive'
+                        }
+                    },
                     { national_id: nationalId }
                 ]
             }
         });
 
         return {
-            emailExists: existingUser?.email === email,
+            emailExists: existingUser?.email?.toLowerCase() === email.toLowerCase(),
             nationalIdExists: existingUser?.national_id === nationalId
         };
     }

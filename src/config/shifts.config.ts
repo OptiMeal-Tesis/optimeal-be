@@ -170,7 +170,7 @@ class ShiftsConfig {
 
   /**
    * Convert shift to pickUpTime (ISO datetime string)
-   * Uses the start time of the shift and today's date
+   * Uses the start time of the shift and today's date in Argentina timezone
    */
   public shiftToPickUpTime(shift: string): string | null {
     const shiftDetails = this.getShiftByLabel(shift);
@@ -179,8 +179,16 @@ class ShiftsConfig {
       return null;
     }
 
+    const ARG_TZ = "America/Argentina/Buenos_Aires";
     const now = new Date();
-    const today = now.toISOString().split('T')[0];
+    
+    // Get today's date in Argentina timezone
+    const today = new Intl.DateTimeFormat("en-CA", {
+      timeZone: ARG_TZ,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(now);
     
     // Create pickup time at the start of the shift
     const hour = String(shiftDetails.startHour).padStart(2, '0');

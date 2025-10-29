@@ -214,13 +214,25 @@ export class OrderService {
       throw new Error("El horario de retiro de la orden es obligatorio");
     }
 
-    // UTC validations
+    // Argentina timezone validations
+    const ARG_TZ = "America/Argentina/Buenos_Aires";
     const pickupDate = new Date(request.pickUpTime);
     const now = new Date();
 
-    // Get date strings for comparison (YYYY-MM-DD format)
-    const nowDateStr = now.toISOString().split("T")[0];
-    const pickupDateStr = pickupDate.toISOString().split("T")[0];
+    // Get date strings for comparison in Argentina timezone (YYYY-MM-DD format)
+    const nowDateStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: ARG_TZ,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(now);
+    
+    const pickupDateStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: ARG_TZ,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(pickupDate);
 
     // Validate same day
     if (nowDateStr !== pickupDateStr) {
@@ -233,12 +245,19 @@ export class OrderService {
     }
 
     // Validate shift hours using dynamic shifts configuration
-    const pickupHour = pickupDate.getHours();
-    const validUTCHours = shiftsConfig.getValidUTCHours();
-    if (!validUTCHours.includes(pickupHour)) {
-      const shiftRange = shiftsConfig.getShiftHourRange();
+    // Convert pickup time to Argentina timezone for hour validation
+    const pickupHourArgentina = new Intl.DateTimeFormat("en-US", {
+      timeZone: ARG_TZ,
+      hour: "numeric",
+      hour12: false,
+    }).format(pickupDate);
+    
+    const validArgentinaHours = shiftsConfig.getShiftHourRange();
+    const hourNum = parseInt(pickupHourArgentina);
+    
+    if (hourNum < validArgentinaHours.minHour || hourNum >= validArgentinaHours.maxHour) {
       throw new Error(
-        `El horario de retiro debe estar entre las ${shiftRange.minHour}:00 y ${shiftRange.maxHour}:00 hora Argentina`
+        `El horario de retiro debe estar entre las ${validArgentinaHours.minHour}:00 y ${validArgentinaHours.maxHour}:00 hora Argentina`
       );
     }
 
@@ -325,12 +344,23 @@ export class OrderService {
       status: order.status,
       totalPrice: order.totalPrice,
       shift: shiftsConfig.pickUpTimeToShift(order.pickUpTime) || "",
-      createdAt: order.createdAt,
-      updatedAt: order.updatedAt,
+      pickUpTime: this.convertToArgentinaTimezone(order.pickUpTime),
+      createdAt: this.convertToArgentinaTimezone(order.createdAt),
+      updatedAt: this.convertToArgentinaTimezone(order.updatedAt),
       orderItems: order.orderItems.map((item: any) =>
         this.mapOrderItemToResponse(item)
       ),
     };
+  }
+
+  private convertToArgentinaTimezone(date: Date): Date {
+    const ARG_TZ = "America/Argentina/Buenos_Aires";
+    
+    // Convert UTC date to Argentina timezone
+    const argDate = new Date(date.toLocaleString("en-US", { timeZone: ARG_TZ }));
+    
+    // Create a new Date object with the Argentina timezone values
+    return new Date(argDate.getTime() + (argDate.getTimezoneOffset() * 60000));
   }
 
   private mapOrderItemToResponse(item: any): OrderItemResponse {
@@ -453,8 +483,8 @@ export class OrderService {
   private async broadcastShiftSummaryForOrder(order: any): Promise<void> {
     try {
       // Determine which shift the order belongs to based on pickUpTime
-      const pickupHour = new Date(order.pickUpTime).getHours();
-      const shift = shiftsConfig.getShiftFromUTCHour(pickupHour);
+      const pickupDate = new Date(order.pickUpTime);
+      const shift = shiftsConfig.pickUpTimeToShift(pickupDate) || 'all';
       
       // Get shift summary for the specific shift
       const shiftSummary = await this.getShiftSummary(shift);

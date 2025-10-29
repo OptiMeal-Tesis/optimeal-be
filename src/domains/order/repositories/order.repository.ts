@@ -473,8 +473,15 @@ export class OrderRepository {
       preparedQuantity: number;
     }>;
   }> {
-    // Always use current date
-    const targetDate = new Date().toISOString().split("T")[0];
+    // Always use current date in Argentina timezone
+    const ARG_TZ = "America/Argentina/Buenos_Aires";
+    const now = new Date();
+    const targetDate = new Intl.DateTimeFormat("en-CA", {
+      timeZone: ARG_TZ,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(now);
 
     // Get date components (YYYY-MM-DD format)
     const [year, month, day] = targetDate.split("-").map(Number);

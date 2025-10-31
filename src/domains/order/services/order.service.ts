@@ -115,9 +115,7 @@ export class OrderService {
   async getOrdersWithFilters(filters: {
     page: number;
     limit: number;
-    nationalId?: string;
-    orderId?: number;
-    userName?: string;
+    search?: string;
     shift?: string;
   }): Promise<OrderPaginatedResponse> {
     try {

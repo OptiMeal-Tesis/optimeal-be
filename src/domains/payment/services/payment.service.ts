@@ -95,6 +95,8 @@ export class PaymentService {
         // Build MP preference
         const preference: any = {
           external_reference: checkout.externalReference,
+          title: "OptiMeal",
+          picture_url: process.env.MP_LOGO_URL,
           items: await Promise.all(
             requestWithPickUpTime.items.map(async (i) => {
               const product = await tx.product.findUnique({ where: { id: i.productId } });

@@ -47,6 +47,7 @@ export interface OrderResponse {
     status: OrderStatus;
     totalPrice: number;
     shift: string;
+    pickUpTime: Date;
     createdAt: Date;
     updatedAt: Date;
     orderItems: OrderItemResponse[];

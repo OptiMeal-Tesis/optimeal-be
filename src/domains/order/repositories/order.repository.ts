@@ -153,29 +153,49 @@ export class OrderRepository {
   async findWithFilters(filters: {
     page: number;
     limit: number;
-    nationalId?: string;
-    orderId?: number;
-    userName?: string;
+    search?: string;
     shift?: string;
   }): Promise<{ orders: Order[]; total: number; totalPages: number }> {
-    const { page, limit, nationalId, orderId, userName, shift } = filters;
+    const { page, limit, search, shift } = filters;
     const skip = (page - 1) * limit;
 
     // Build where clause
     const where: Prisma.OrderWhereInput = {};
 
-    if (orderId) {
-      where.id = orderId;
-    }
+    // If search is provided, search across order ID, user national_id, and user name
+    if (search) {
+      // First, find order IDs that contain the search term (convert ID to string)
+      const searchTerm = search.trim();
+      // Use SQL concatenation to safely build the LIKE pattern
+      const matchingOrderIds = await this.prisma.$queryRaw<Array<{ id: number }>>`
+        SELECT id FROM "Order"
+        WHERE CAST(id AS TEXT) LIKE '%' || ${searchTerm} || '%'
+      `;
+      
+      const orderIds = matchingOrderIds.map((row) => row.id);
 
-    if (nationalId || userName) {
-      where.user = {};
-      if (nationalId) {
-        where.user.national_id = { contains: nationalId, mode: "insensitive" };
-      }
-      if (userName) {
-        where.user.name = { contains: userName, mode: "insensitive" };
-      }
+      where.OR = [
+        // Search by order ID (contains search term when converted to string)
+        ...(orderIds.length > 0 ? [{ id: { in: orderIds } }] : []),
+        // Search by user national_id (contains, case insensitive)
+        {
+          user: {
+            national_id: {
+              contains: searchTerm,
+              mode: "insensitive",
+            },
+          },
+        },
+        // Search by user name (contains, case insensitive)
+        {
+          user: {
+            name: {
+              contains: searchTerm,
+              mode: "insensitive",
+            },
+          },
+        },
+      ];
     }
 
     // Handle date and shift filtering based on pickUpTime (Argentina timezone)
@@ -473,8 +493,15 @@ export class OrderRepository {
       preparedQuantity: number;
     }>;
   }> {
-    // Always use current date
-    const targetDate = new Date().toISOString().split("T")[0];
+    // Always use current date in Argentina timezone
+    const ARG_TZ = "America/Argentina/Buenos_Aires";
+    const now = new Date();
+    const targetDate = new Intl.DateTimeFormat("en-CA", {
+      timeZone: ARG_TZ,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(now);
 
     // Get date components (YYYY-MM-DD format)
     const [year, month, day] = targetDate.split("-").map(Number);

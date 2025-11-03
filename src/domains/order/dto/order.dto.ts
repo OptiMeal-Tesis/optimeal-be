@@ -47,16 +47,7 @@ export const OrderQueryParamsDTO = z.object({
         }
         return num;
     }),
-    nationalId: z.string().optional(),
-    orderId: z.string().optional().transform((val) => {
-        if (!val) return undefined;
-        const num = parseInt(val, 10);
-        if (isNaN(num) || num <= 0) {
-            throw new Error('Order ID must be a positive integer');
-        }
-        return num;
-    }),
-    userName: z.string().optional(),
+    search: z.string().optional(),
     shift: z.string().optional().transform((val) => {
         if (!val) return undefined;
         const resolved = shiftsConfig.getShiftByLabel(val);
